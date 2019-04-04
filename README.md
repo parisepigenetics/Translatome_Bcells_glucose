@@ -11,6 +11,7 @@ Polysome profiling 13 fractions divided in:
  - Monosomes: 5-6
  - Light polysomes: 7-9
  - Heavy polysomes: 10-13
+ - Total RNA for each replicate
 
 ## 2. Sequencing Analysis (Shell commands and scripts)
 
@@ -23,9 +24,23 @@ Polysome profiling 13 fractions divided in:
 | High_glucose rep2 | 10948574  | 11572776   | 8985906    |
 | High_glucose rep3 | 10855263  | 8762845    | 13196915   |
 
+ **run_dirty_STAR.sh**
+- Mapping: 
+STAR 2.5.4b; parameters: --outFilterMultimapNmax 20 --outSAMprimaryFlag AllBestScore --outSAMtype BAM SortedByCoordinate --quantMode TranscriptomeSAM GeneCounts --outStd Log --seedSearchStartLmaxOverLread 0.5 --winAnchorMultimapNmax 36 --outFilterScoreMinOverLread 0.5 --outFilterMatchNminOverLread 0.5
+ 
+| Unique mapped     | Monosomes | Light Poly | Heavy Poly | Total RNA |
+|-------------------|-----------|------------|------------|-----------|
+| Low_glucose rep1  | 61.24%    | 75.83%     | 74.58%     | 79.24%    |
+| Low_glucose rep2  | 56.84%    | 76.06%     | 74.69%     | 78.81%    |
+| Low_glucose rep3  | 50.12%    | 68.52%     | 73.96%     | 77.56%    |
+| High_glucose rep1 | 60.37%    | 73.56%     | 73.78%     | 78.71%    |
+| High_glucose rep2 | 58.57%    | 69.51%     | 80.24%     | 79.24%    |
+| High_glucose rep3 | 64.97%    | 68.10%     | 77.64%     | 78.40%    |
+ 
+- TPM quantification: 
+RSEM (used) and STRINGTIE (just tried)
 
-        [Translatome_Bcells_glucose/run_dirty_STAR.sh]
-      
+- Filtering of the files for protein coding genes
 
 ## 3.  Statistical analysis (R script)
 ask it to Costas
