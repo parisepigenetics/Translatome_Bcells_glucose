@@ -24,6 +24,9 @@ Polysome profiling 13 fractions divided in:
 | High_glucose rep3 | 10855263  | 8762845    | 13196915   |
 
 
+        [Translatome_Bcells_glucose/run_dirty_STAR.sh]
+      
+
 ## 3.  Statistical analysis (R script)
 ask it to Costas
 #### Gene ontology Analysis
