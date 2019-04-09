@@ -1,4 +1,4 @@
-# Load packages ----
+## Load packages ----
 library(tidyverse)
 library(ggplot2)
 library(plotly)
@@ -21,6 +21,8 @@ library(ReactomePA)
 library(enrichplot)
 library(igraph)
 library(Factoshiny)
+library(VennDiagram)
+
 
 
 ## Functions ----------------------------------------------
@@ -95,6 +97,8 @@ lowExpression_filter <- function(e, groups, thres = 3, samples = 1, coefVar = 0.
   return(filteredDF)
 }
 
+
+
 ## Preprpocess data DE -------------
 # Load the counts table.
 countsTableRaw <- read.table("countsTOTALS_CodingGenes.tsv", header = TRUE, sep = "\t")
@@ -156,7 +160,7 @@ countsTableAll <- countsTableRaw[cpm_Filt_names,]
 cpmAll_Filt <- cpmall[cpm_Filt_names, ]
 
 
-# Quality Control Plots ------------------------------
+### Quality Control Plots ------------------------------
 ## PCA on counts.
 res.pca.Counts = PCA(t(countsTableAll), graph = FALSE)
 fviz_pca_ind(res.pca.Counts,
@@ -165,10 +169,9 @@ fviz_pca_ind(res.pca.Counts,
              palette = c("#00AFBB", "#E7B800", "#FC4E07", "orange"),
              addEllipses = TRUE, # Ellipses de concentration
              legend.title = "Groups",
-             title = "PCA on the Polysome profile counts table."
-)
+             title = "PCA on the Polysome profile counts table.")
 
-## PCA on counts.
+## PCA on CPMs
 res.pca.CPMs = PCA(t(cpmAll_Filt), graph = FALSE)
 fviz_pca_ind(res.pca.CPMs,
              fill.ind = groupsall, col.var = "black", repel = TRUE,
@@ -176,8 +179,8 @@ fviz_pca_ind(res.pca.CPMs,
              palette = c("#00AFBB", "#E7B800", "#FC4E07", "orange"),
              addEllipses = TRUE, # Ellipses de concentration
              legend.title = "Groups",
-             title = "PCA on the Polysome profile CPMs table."
-)
+             title = "PCA on the Polysome profile CPMs table.")
+
 
 
 ## Differential Expression analysis -----------------------
@@ -219,7 +222,7 @@ vfitM <- contrasts.fit(fitM, contrasts = contr.matrix_M)
 efitM <- eBayes(vfitM, robust = TRUE) # Playing with the parameters of ebayes makes no difference.
 efM <- decideTests(efitM, p.value = 0.05, lfc = 0.5)
 summary(efM)
-plotSA(efitM)
+plotSA(efitM, main = "SA plot for monosomes L/H")
 tfitM <- treat(vfitM, lfc = log2(1.1))
 ttM <- decideTests(tfitM)
 summary(ttM)
@@ -234,12 +237,12 @@ vfitL <- contrasts.fit(fitL, contrasts = contr.matrix_L)
 efitL <- eBayes(vfitL, robust = TRUE) # Playing with the parameters of ebayes makes no difference.
 efL <- decideTests(efitL, p.value = 0.05, lfc = 0.5)
 summary(efL)
-plotSA(efitL)
+plotSA(efitL, main = "SA plot for light polysomes L/H")
 tfitL <- treat(vfitL, lfc = log2(1.1))
 ttL <- decideTests(tfitL)
 summary(ttL)
 
-plotMD(efitL, column = 1, status = efL[,1], main = colnames(efitL)[1],ylim = c( -1.5, 1.5))
+plotMD(efitL, column = 1, status = efL[,1], main = colnames(efitL)[1], ylim = c( -1.5, 1.5))
 
 
 ### DiffExp Heavy ribosomes -------------------------------
@@ -249,7 +252,7 @@ vfitH <- contrasts.fit(fitH, contrasts = contr.matrix_H)
 efitH <- eBayes(vfitH, robust = TRUE) # Playing with the parameters of ebayes makes no difference.
 efH <- decideTests(efitH,p.value = 0.05, lfc = 0.5)
 summary(efH)
-plotSA(efitH)
+plotSA(efitH, main = "SA plot for heavy polysomes L/H")
 tfitH <- treat(vfitH, lfc = log2(1.1))
 ttH <- decideTests(tfitH)
 summary(ttH)
@@ -264,35 +267,36 @@ vfitT <- contrasts.fit(fitT, contrasts = contr.matrix_T)
 efitT <- eBayes(vfitT, robust = TRUE) # Playing with the parameters of ebayes makes no difference.
 efT <- decideTests(efitT,p.value = 0.05, lfc = 0.5)
 summary(efT)
-plotSA(efitT)
+plotSA(efitT, main = "SA plot for RNA total L/H")
 tfitT <- treat(vfitT, lfc = log2(1.15))
 ttT <- decideTests(tfitT)
 summary(ttT)
 
 plotMD(efitT, column = 1, status = efT[,1], main = colnames(efitT)[1],ylim = c( -1.5, 1.5))
 
-## Toptables ------------
+### Toptables ------------
 DEH <- topTable(efitH, coef = 1, p.value = 0.05, lfc = 0.5, number = Inf)
 DEL <- topTable(efitL, coef = 1, p.value = 0.05, lfc = 0.5, number = Inf)
 DEM <- topTable(efitM, coef = 1, p.value = 0.05, lfc = 0.5, number = Inf)
 DET <- topTable(efitT, coef = 1, p.value = 0.05, lfc = 0.5, number = Inf)
 
-degs <- rbind(DEH, DEL)
+degs <- union(rownames(DEL), rownames(DEH))
+write(degs, "degs_09042019_geneNames.txt")
+
+### Venn diagrams -----------
+# Intersection between Light, Heavy, Total
+vennALL <- venn.diagram(list(Heavy = rownames(DEH), Light = rownames(DEL), Total = rownames(DET)), NULL, fill = c("darkorange1", "deepskyblue3", "darkolivegreen4"), alpha = c(0.5, 0.5, 0.5), cex = 3)
 
 
-# Venn diagrams -----------
 
-
-
-#### Preprocess data Clustering -------------------------
+#### Preprocess Translation data -------------------------
 tpmPPglu <- read.table("polysomeProfile_TPM_proteinCoding.csv", header = TRUE, sep = ";")
-listDEGs <- scan("rnaFeat/degs_16102018_geneNames.txt", what = "character")
 
 row_NON_zero <- apply(tpmPPglu, 1, function(row) all(row != 0))
 tpmPPgluClean <- tpmPPglu[row_NON_zero,]
 
 # Then we collect the genes and remove the total.
-tpmDEGs <- tpmPPglu[listDEGs,]
+tpmDEGs <- tpmPPglu[degs,]
 tpmDEGs <- tpmDEGs[,1:18]
 
 # Calculate means of each group
@@ -323,31 +327,16 @@ ratioMdeg <- log2(monoHdeg/monoLdeg)
 logRatiosDEG <- data.frame("Mono" = ratioMdeg, "Light" = ratioLdeg, "Heavy" = ratioHdeg,  row.names = rownames(tpmDEGs))
 logRatiosALL <- data.frame("Mono" = ratioMall, "Light" = ratioLall, "Heavy" = ratioHall,  row.names = rownames(tpmPPgluClean))
 
-#### Clustering ------------------------------------------
-my_palette <- brewer.pal(n = 11, name = "RdYlGn")
-
-### Hierarchical Clustering ----
-# Clustering.
-hc_S <- hclust(dist(logRatiosDEG), method = "single")
-# define clusters (hard thresold)
-hc_S_Cls <- cutree(hc_S, h = max(hc_S$height/4))
-# Colour vector for clusters side bar.
-myCols_hc_S <- rainbow(length(unique(hc_S_Cls)))
-myClusts_hc_S <- myCols_hc_S[hc_S_Cls]
-heatmap.2(as.matrix(logRatiosDEG), main = "DEGs logRatio H/L HClust Single",  Rowv = as.dendrogram(hc_S), Colv = FALSE, dendrogram = "row", col = my_palette, cexCol = 1.5, cexRow = 0.5, key.title = NA, keysize = 0.8, key.xlab = NA, ylab = "Genes", RowSideColors = myClusts_hc_S)
-
-# Independent clustering just for comparison.
-heatmap.2(as.matrix(logRatiosDEG), main = "DEGs logRatio H/L HClust Single",  dendrogram = "row", Colv = FALSE, col = my_palette, cexCol = 1.5, cexRow = 0.5, key.title = NA, keysize = 0.8, key.xlab = NA, ylab = "Genes", hclustfun = function(x) hclust(x, method = "single"))
 
 
-#### Enrichments ------------------------------------------
+## Enrichments ------------------------------------------
 # Generate the gene list.
 geneListENS <- logRatiosDEG[["Heavy"]]
-names(geneListENS) <- listDEGs
+names(geneListENS) <- degs
 geneListENS <- sort(geneListENS, decreasing = TRUE)
-genesENS <- listDEGs
+genesENS <- degs
 # Generate a gene list with gene symbols too
-geneConv <- bitr(listDEGs, fromType = "ENSEMBL", toType = c("SYMBOL"), OrgDb = org.Hs.eg.db)
+geneConv <- bitr(degs, fromType = "ENSEMBL", toType = c("SYMBOL"), OrgDb = org.Hs.eg.db)
 rownames(geneConv) <- geneConv[["ENSEMBL"]]
 geneConv$ENSEMBL <- NULL
 genesSYMB <- vector()
@@ -379,7 +368,7 @@ esigsDEGs <- GSEA(geneListSYMB, minGSSize = 20, TERM2GENE = m_df)
 dotplot(esigsDEGs, showCategory = 50, title = "DotPlot MsiGDB DEGS GSEA")
 
 
-## GO enrichments
+### GO enrichments ------------
 # GO group enrichment
 ggoDEGs_MF2 <- groupGO(gene = genesENS, OrgDb = org.Hs.eg.db, ont = "MF", level = 2, keyType = "ENSEMBL", readable = TRUE)
 barplot(ggoDEGs_MF2, showCategory = 30,  title = "GroupGO DEGs MF_2")
@@ -408,22 +397,50 @@ dotplot(egogsDEGs_BP, title = "GSEA GO BP DEGs")
 egogsDEGs_ALL <- gseGO(geneList = geneListENS, OrgDb = org.Hs.eg.db, ont = "ALL", nPerm = 1000, pvalueCutoff = 0.05, keyType = "ENSEMBL")
 dotplot(egogsDEGs_ALL, title = "GSEA GO ALL DEGs")
 
+#TODO include the WikiPathways enrichments also!
+
 ## Perform KEEG pathway enrichment.
+# Convert ENSEMBL IDs to ENTREZ
+genesENTREZ <- as.character(mapIds(org.Hs.eg.db, genesENS, "ENTREZID", "ENSEMBL"))
 # Enrich KEGG pathways
-ekegDEGs <- enrichKEGG(gene = genesSYMB, universe = univPPglu, organism = "hsa", pvalueCutoff = 0.05)  # Does not work needs ENTREZ id
+ekegDEGs <- enrichKEGG(gene = genesENTREZ, organism = "hsa", pvalueCutoff = 0.05)
 barplot(ekegDEGs, title = "DEGs KEGG enrichment")
 
 # Enrich KEGG modules
-ekegMDGEs <- enrichMKEGG(gene = genesSYMB, universe = univPPglu, organism = "hsa")  # Does not work needs ENTREZ id
+ekegMDGEs <- enrichMKEGG(gene = genesENTREZ, organism = "hsa", pvalueCutoff = 0.05)
 barplot(ekegMDGEs, title = "DEGs KEGG modules enrichment")
 
-ekePDEGs <- enrichPathway(gene = genesSYMB, universe = univPPglu, organism = "human", pvalueCutoff = 0.05)  # Does not work needs ENTREZ id
-barplot(ekePDEGs, showCategory = 30, title = "DEGs Pathways enrichment")
+# Enrich REACTOME Pathways
+ekePDEGs <- enrichPathway(gene = genesENTREZ, organism = "human", pvalueCutoff = 0.05)
+barplot(ekePDEGs, showCategory = 30, title = "DEGs REACTOME Pathways enrichment")
 
 
-#### Visualisations ---------------------------------------
+### Enrichment Visualisation ------------------------------
 
 ## Category Network (CNET) plots (perhaps the most usefull!)
-cnetplot(egogsDEGs_BP, foldChange = geneListENS, colorEdge = TRUE) + ggtitle("CNETplot DEGs MF")
-cnetplot(egogsDEGs_ALL, foldChange = geneListENS, colorEdge = TRUE) + ggtitle("CNETplot DEGs MF")
+cnetplot(egoDEGs_MF, foldChange = geneListENS, colorEdge = TRUE) + ggtitle("CNETplot GOenrich DEGs MF")
+cnetplot(egoDEGs_BP, foldChange = geneListENS, colorEdge = TRUE) + ggtitle("CNETplot GOenrich DEGs BP")
+cnetplot(egoDEGs_ALL, foldChange = geneListENS, colorEdge = TRUE) + ggtitle("CNETplot GOenrich DEGs ALL")
+
+cnetplot(egogsDEGs_MF, foldChange = geneListENS, colorEdge = TRUE) + ggtitle("CNETplot GOgsea DEGs MF")
+cnetplot(egogsDEGs_BP, foldChange = geneListENS, colorEdge = TRUE) + ggtitle("CNETplot GOgsea DEGs BP")
+cnetplot(egogsDEGs_ALL, foldChange = geneListENS, colorEdge = TRUE) + ggtitle("CNETplot GOgsea DEGs ALL")
+
+
+
+#### Clustering ------------------------------------------
+my_palette <- brewer.pal(n = 11, name = "RdYlGn")
+
+### Hierarchical Clustering ----
+# Clustering.
+hc_S <- hclust(dist(logRatiosDEG), method = "single")
+# define clusters (hard thresold)
+hc_S_Cls <- cutree(hc_S, h = max(hc_S$height/4))
+# Colour vector for clusters side bar.
+myCols_hc_S <- rainbow(length(unique(hc_S_Cls)))
+myClusts_hc_S <- myCols_hc_S[hc_S_Cls]
+heatmap.2(as.matrix(logRatiosDEG), main = "DEGs logRatio H/L HClust Single",  Rowv = as.dendrogram(hc_S), Colv = FALSE, dendrogram = "row", col = my_palette, cexCol = 1.5, cexRow = 0.5, key.title = NA, keysize = 0.8, key.xlab = NA, ylab = "Genes", RowSideColors = myClusts_hc_S)
+
+# Independent clustering just for comparison.
+heatmap.2(as.matrix(logRatiosDEG), main = "DEGs logRatio H/L HClust Single",  dendrogram = "row", Colv = FALSE, col = my_palette, cexCol = 1.5, cexRow = 0.5, key.title = NA, keysize = 0.8, key.xlab = NA, ylab = "Genes", hclustfun = function(x) hclust(x, method = "single"))
 
