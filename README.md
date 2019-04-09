@@ -1,12 +1,12 @@
-# Translatome_Bcells_glucose
+# Analysis of polysome profile experiments on B-cells.
+
 ## 1. Biological experiment outline:
 
-
-#### TREATMENT
+### TREATMENT
 - Triplicates (2x15cm dishes = 30 milion cells per replicate), splited 5 days before 1:2
 - Starved for 24 hours at 0.5 mM glucose, then 0.5 hours at 20 mM for HIGH glucose while 0.5 mM for LOW glucose
 
-#### FRACTION selection for sequencing
+### FRACTION selection for sequencing
 Polysome profiling 13 fractions divided in:
  - Monosomes: 5-6
  - Light polysomes: 7-9
@@ -42,12 +42,23 @@ RSEM (used) and STRINGTIE (just tried)
 
 - Filtering of the files for protein coding genes
 
-## 3.  Statistical analysis (R script)
-ask it to Costas
-#### Gene ontology Analysis
-ask it to Costas
+## 3.  Statistical analysis 
+
+**diffAnal_GOenrich_Clustering_Bcells.R**
+
+R code to performe all the downstream analysis starting from the read counts and/or the TPM tables after the RNA-seq analysis.
+
+The script is performing the following families of analysis.
+
+1. Differential analysis using Limma.
+2. Quality control using R PCA packages (and for visualisation).
+3. Enrichment analysis using clusterProfiler.
+4 Cluster analysis using various R clustering methods (hierarchical, k-means, mclust).
+
+### Gene ontology Analysis
+...
 
 ## 4. RNA features analysis (Python script)
-ask to costas
 
-
+The RNA features extraction software can be found at the following GitHub repository:
+[RNA_Features_Extraction](https://github.com/parisepigenetics/rna_feat_ext)
