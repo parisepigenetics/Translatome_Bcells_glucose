@@ -22,6 +22,7 @@ library(enrichplot)
 library(igraph)
 library(Factoshiny)
 library(VennDiagram)
+library(pheatmap)
 
 
 
@@ -96,6 +97,51 @@ lowExpression_filter <- function(e, groups, thres = 3, samples = 1, coefVar = 0.
   rownames(filteredDF) <- rows
   return(filteredDF)
 }
+
+
+plot_semiSupervised_clust <- function(data, k, method, scale = FALSE, ...){
+  # Nicely plots a k-means clustering.
+  # Scaling.
+  if (scale == TRUE) {
+    data <- as.data.frame(scale(data))
+  }
+  # Calculate the clustering.
+  clustMeth <- match.fun(method)
+  clustRes <- clustMeth(data, k, ...)
+  # Append id and cluster
+  dfcall <- cbind(data, id = seq(nrow(data)), cluster = clustRes$cluster)
+  # Add idsort, the id number ordered by cluster
+  dfcall$idsort <- dfcall$id[order(dfcall$cluster)]
+  dfcall$idsort <- order(dfcall$idsort)
+  # Generate cluster colours.
+  clusterCols <- as.character(sort(clustRes$cluster))
+  # Plotting
+  heatmap(as.matrix(data)[order(clustRes$cluster),], Rowv = NA, Colv = NA, scale = "none", labRow = NA, cexCol = 1.5, col = my_palette, RowSideColors = clusterCols, ylab = "Genes", main = paste(method, " clustering with ", k, " clusters scale:", as.character(scale)))
+  invisible(list(res = clustRes, df = dfcall))
+}
+
+
+plot_unSupervised_clust <- function(data, method, scale = FALSE, ...){
+  # Nicely plots a k-means clustering.
+  # Scaling.
+  if (scale == TRUE) {
+    data <- as.data.frame(scale(data))
+  }
+  # Calculate the clustering.
+  clustMeth <- match.fun(method)
+  clustRes <- clustMeth(data, ...)
+  # Append id and cluster
+  dfcall <- cbind(data, id = seq(nrow(data)), cluster = clustRes$classification)
+  # Add idsort, the id number ordered by cluster
+  dfcall$idsort <- dfcall$id[order(dfcall$cluster)]
+  dfcall$idsort <- order(dfcall$idsort)
+  # Generate cluster colours.
+  clusterCols <- as.character(sort(clustRes$classification))
+  # Plotting
+  heatmap(as.matrix(data)[order(clustRes$classification),], Rowv = NA, Colv = NA, scale = "none", labRow = NA, cexCol = 1.5, col = my_palette, RowSideColors = clusterCols, ylab = "Genes", main = paste(method, " clustering, scale:", as.character(scale)))
+  invisible(list(res = clustRes, df = dfcall))
+}
+
 
 
 
@@ -428,10 +474,10 @@ cnetplot(egogsDEGs_ALL, foldChange = geneListENS, colorEdge = TRUE) + ggtitle("C
 
 
 
-#### Clustering ------------------------------------------
+#### Clustering -------------------------------------------
 my_palette <- brewer.pal(n = 11, name = "RdYlGn")
-
-### Hierarchical Clustering ----
+c
+### Hierarchical Clustering -------------------------------
 # Clustering.
 hc_S <- hclust(dist(logRatiosDEG), method = "single")
 # define clusters (hard thresold)
@@ -442,5 +488,34 @@ myClusts_hc_S <- myCols_hc_S[hc_S_Cls]
 heatmap.2(as.matrix(logRatiosDEG), main = "DEGs logRatio H/L HClust Single",  Rowv = as.dendrogram(hc_S), Colv = FALSE, dendrogram = "row", col = my_palette, cexCol = 1.5, cexRow = 0.5, key.title = NA, keysize = 0.8, key.xlab = NA, ylab = "Genes", RowSideColors = myClusts_hc_S)
 
 # Independent clustering just for comparison.
+heatmap.2(as.matrix(logRatiosDEG), main = "DEGs logRatio H/L HClust Average",  dendrogram = "row", Colv = FALSE, col = my_palette, cexCol = 1.5, cexRow = 0.5, key.title = NA, keysize = 0.8, key.xlab = NA, ylab = "Genes", hclustfun = function(x) hclust(x, method = "average"))
+
+heatmap.2(as.matrix(logRatiosDEG), main = "DEGs logRatio H/L HClust Ward",  dendrogram = "row", Colv = FALSE, col = my_palette, cexCol = 1.5, cexRow = 0.5, key.title = NA, keysize = 0.8, key.xlab = NA, ylab = "Genes", hclustfun = function(x) hclust(x, method = "ward.D2"))
+
 heatmap.2(as.matrix(logRatiosDEG), main = "DEGs logRatio H/L HClust Single",  dendrogram = "row", Colv = FALSE, col = my_palette, cexCol = 1.5, cexRow = 0.5, key.title = NA, keysize = 0.8, key.xlab = NA, ylab = "Genes", hclustfun = function(x) hclust(x, method = "single"))
+
+heatmap.2(as.matrix(logRatiosDEG), main = "DEGs logRatio H/L HClust Complete",  dendrogram = "row", Colv = FALSE, col = my_palette, cexCol = 1.5, cexRow = 0.5, key.title = NA, keysize = 0.8, key.xlab = NA, ylab = "Genes", hclustfun = function(x) hclust(x, method = "complete"))
+
+
+## Visualise results from different clustering algorithms.
+# Hierarchical clustering
+clustH.res <- hclust(dist(logRatiosDEG), method = "ward.D2")
+fviz_cluster(clustH.res, data = logRatiosDEG, ellipse.type = "convex") + theme_minimal()
+
+# K-means
+kmeans4.res <- kmeans(scale(logRatiosDEG), 4)
+kmeans5.res <- kmeans(scale(logRatiosDEG), 5)
+plot_semiSupervised_clust(logRatiosDEG, 4, "kmeans")
+fviz_cluster(kmeans5.res, data = logRatiosDEG, ellipse.type = "convex") + theme_minimal()
+
+# PAM
+pam4.res <- pam(logRatiosDEG, 4)
+pam5.res <- pam(logRatiosDEG, 5)
+plot_semiSupervised_clust(logRatiosDEG, 4, "pam")
+plot_semiSupervised_clust(logRatiosDEG, 5, "pam")
+fviz_cluster(pam5.res, data = logRatiosDEG, ellipse.type = "convex") + theme_minimal()
+
+# MClust
+mclust.res <- Mclust(logRatiosDEG)
+fviz_cluster(mclust.res, data = logRatiosDEG, ellipse.type = "convex") + theme_minimal()
 
