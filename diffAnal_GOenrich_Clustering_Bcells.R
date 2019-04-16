@@ -519,3 +519,151 @@ fviz_cluster(pam5.res, data = logRatiosDEG, ellipse.type = "convex") + theme_min
 mclust.res <- Mclust(logRatiosDEG)
 fviz_cluster(mclust.res, data = logRatiosDEG, ellipse.type = "convex") + theme_minimal()
 
+### We choose the Mclust method!
+clustRes <- (plot_unSupervised_clust(logRatiosDEG, "Mclust"))
+
+
+## RNA Features analysis --------
+# Prepare the features data frame.
+clusterGeneIDs <- clustRes$df["cluster"]
+featuresDF <- read.table("rnaFeat/degs_09042019_ENSEMBL.tab", header = TRUE, sep = ";")
+# Create a slice with only the numeric values of the data frame.
+featDF <- featuresDF[,c(1:13)]
+
+# Add the clustering column
+featDF["Cluster"] <- 0
+for (r in row.names(featDF)) {
+  geneID <- as.character(featDF[r,]$ensembl_gene_id);
+  featDF[r,]$Cluster <- clusterGeneIDs[geneID,];
+}
+
+# Add the translation column.
+featDF["Translation"] <- "a"
+
+# Characterise the clusters based on translation behaviour.
+#! ATTENTION !# This is ONLY for the specific clustering result!
+for (r in row.names(featDF)) {
+  if (featDF[r,]$Cluster %in% c(1,6)) featDF[r,]$Translation <- "Up"
+  if (featDF[r,]$Cluster %in% c(4,5)) featDF[r,]$Translation <- "Down"
+  if (featDF[r,]$Cluster %in% c(2,3)) featDF[r,]$Translation <- "Inter"
+}
+
+# Plot the Coding length boxplots
+ggplot(featDF, aes(x = Cluster, y = coding_len, fill = Translation, group = Cluster)) +
+  coord_cartesian(ylim = c(0, 4000)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.95, notch = TRUE) +
+  theme(legend.position = "topleft") +
+  scale_x_discrete(limits = c("1","2","3","4","5","6")) +
+  ylab("Coding Length") +
+  xlab("Cluster") +
+  ggtitle("Coding length distribution among clusters") +
+  theme_bw()
+
+# Plot the 5UTR length boxplots
+ggplot(featDF, aes(x = Cluster, y = len_5pUTR, fill = Translation, group = Cluster)) +
+  coord_cartesian(ylim = c(0, 1000)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.95, notch = TRUE) +
+  theme(legend.position = "topleft") +
+  scale_x_discrete(limits = c("1","2","3","4","5","6")) +
+  ylab("5'UTR Length") +
+  xlab("Cluster") +
+  ggtitle("5'UTR length distribution among clusters") +
+  theme_bw()
+
+# Plot the GC 5'UTR boxplots
+ggplot(featDF, aes(x = Cluster, y = GC_5pUTR, fill = Translation, group = Cluster)) +
+  coord_cartesian(ylim = c(35, 100)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.95, notch = TRUE) +
+  theme(legend.position = "topleft") +
+  scale_x_discrete(limits = c("1","2","3","4","5","6")) +
+  ylab("5'UTR GC") +
+  xlab("Cluster") +
+  ggtitle("GC 5'UTR distribution among clusters") +
+  theme_bw()
+
+# Plot the 5UTR MFE boxplots
+ggplot(featDF, aes(x = Cluster, y = MFE_5pUTR, fill = Translation, group = Cluster)) +
+  coord_cartesian(ylim = c(-400, 0)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.95, notch = TRUE) +
+  theme(legend.position = "topleft") +
+  scale_x_discrete(limits = c("1","2","3","4","5","6")) +
+  ylab("5'UTR MFE") +
+  xlab("Cluster") +
+  ggtitle("MFE 5'UTR distribution among clusters") +
+  theme_bw()
+
+# Plot the 5UTR MFE_BP boxplots
+ggplot(featDF, aes(x = Cluster, y = MfeBP_5pUTR, fill = Translation, group = Cluster)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.95, notch = TRUE) +
+  theme(legend.position = "topleft") +
+  scale_x_discrete(limits = c("1","2","3","4","5","6")) +
+  ylab("5'UTR Mfe_Bp") +
+  xlab("Cluster") +
+  ggtitle("MFE pre Bp 5'UTR distribution among clusters") +
+  theme_bw()
+
+# Plot the 3UTR lengths boxplots
+ggplot(featDF, aes(x = Cluster, y = len_3pUTR, fill = Translation, group = Cluster)) +
+  coord_cartesian(ylim = c(0, 4000)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.95, notch = TRUE) +
+  theme(legend.position = "topleft") +
+  scale_x_discrete(limits = c("1","2","3","4","5","6")) +
+  ylab("3'UTR length") +
+  xlab("Cluster") +
+  ggtitle("3'UTR length distribution among clusters") +
+  theme_bw()
+
+# Plot the 3UTR GC lengths boxplots #TODO FIX THE COLUMN NAME
+ggplot(featDF, aes(x = Cluster, y = len_3pUTR.1, fill = Translation, group = Cluster)) +
+  #coord_cartesian(ylim = c(0, 4000)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.95, notch = TRUE) +
+  theme(legend.position = "topleft") +
+  scale_x_discrete(limits = c("1","2","3","4","5","6")) +
+  ylab("3'UTR GC") +
+  xlab("Cluster") +
+  ggtitle("3'UTR GC distribution among clusters") +
+  theme_bw()
+
+# Plot the 3UTR MFE lengths boxplots
+ggplot(featDF, aes(x = Cluster, y = MFE_3pUTR, fill = Translation, group = Cluster)) +
+  coord_cartesian(ylim = c(-1500, 0)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.95, notch = TRUE) +
+  theme(legend.position = "topleft") +
+  scale_x_discrete(limits = c("1","2","3","4","5","6")) +
+  ylab("3'UTR MFE") +
+  xlab("Cluster") +
+  ggtitle("3'UTR MFE distribution among clusters") +
+  theme_bw()
+
+# Plot the 3UTR MFE_BP lengths boxplots
+ggplot(featDF, aes(x = Cluster, y = MfeBP_3pUTR, fill = Translation, group = Cluster)) +
+  #coord_cartesian(ylim = c(-1500, 0)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.95, notch = TRUE) +
+  theme(legend.position = "topleft") +
+  scale_x_discrete(limits = c("1","2","3","4","5","6")) +
+  ylab("3'UTR MFE_BP") +
+  xlab("Cluster") +
+  ggtitle("3'UTR MFE per BP distribution among clusters") +
+  theme_bw()
+
+# Plot the TOP local score boxplots
+ggplot(featDF, aes(x = Cluster, y = TOP_localScore, fill = Translation, group = Cluster)) +
+  #coord_cartesian(ylim = c(-1500, 0)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.95, notch = TRUE) +
+  theme(legend.position = "topleft") +
+  scale_x_discrete(limits = c("1","2","3","4","5","6")) +
+  ylab("TOP local score") +
+  xlab("Cluster") +
+  ggtitle("TOP local score distribution among clusters") +
+  theme_bw()
+
+# Plot the CAI index boxplots
+ggplot(featDF, aes(x = Cluster, y = CAI, fill = Translation, group = Cluster)) +
+  #coord_cartesian(ylim = c(-1500, 0)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.95, notch = TRUE) +
+  theme(legend.position = "topleft") +
+  scale_x_discrete(limits = c("1","2","3","4","5","6")) +
+  ylab("CAI index") +
+  xlab("Cluster") +
+  ggtitle("CAI index distribution among clusters") +
+  theme_bw()
