@@ -331,9 +331,16 @@ write(degs, "degs_09042019_geneNames.txt")
 
 ### Venn diagrams -----------
 # Intersection between Light, Heavy, Total
-vennALL <- venn.diagram(list(Heavy = rownames(DEH), Light = rownames(DEL), Total = rownames(DET)), NULL, fill = c("darkorange1", "deepskyblue3", "darkolivegreen4"), alpha = c(0.5, 0.5, 0.5), cex = 3)
+venn_all <- calculate.overlap(list(Heavy = rownames(DEH), Light = rownames(DEL), Total = rownames(DET)))
 
 
+
+#Venn diagrams vith eulerr package
+fit_Venn <- euler(c("Heavy_P" = 183, "Light_P" = 164, "Total" = 12, 
+               "Heavy_P&Light_P" = 51, "Heavy_P&Total" = 1, "Light_P&Total" = 3,"Heavy_P&Light_P&Total" = 1),
+             shape = "ellipse")
+
+plot(fit_Venn,quantities = TRUE, lty = 1:3, labels = list(font = 4), fills = c("dodgerblue4", "darkgoldenrod1", "cornsilk4"))
 
 #### Preprocess Translation data -------------------------
 tpmPPglu <- read.table("polysomeProfile_TPM_proteinCoding.csv", header = TRUE, sep = ";")
