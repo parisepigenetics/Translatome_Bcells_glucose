@@ -333,6 +333,12 @@ write(degs, "degs_09042019_geneNames.txt")
 # Intersection between Light, Heavy, Total
 vennALL <- venn.diagram(list(Heavy = rownames(DEH), Light = rownames(DEL), Total = rownames(DET)), NULL, fill = c("darkorange1", "deepskyblue3", "darkolivegreen4"), alpha = c(0.5, 0.5, 0.5), cex = 3)
 
+#Venn diagrams vith eulerr package
+fit_Venn <- euler(c("Heavy_P" = 183, "Light_P" = 164, "Total" = 12,
+                    "Heavy_P&Light_P" = 51, "Heavy_P&Total" = 1, "Light_P&Total" = 3,"Heavy_P&Light_P&Total" = 1),
+                    shape = "ellipse")
+
+plot(fit_Venn,quantities = TRUE, lty = 1:3, labels = list(font = 4), fills = c("dodgerblue4", "darkgoldenrod1", "cornsilk4"))
 
 
 #### Preprocess Translation data -------------------------
@@ -671,3 +677,4 @@ ggplot(featDF, aes(x = Cluster, y = CAI, fill = Translation, group = Cluster)) +
   xlab("Cluster") +
   ggtitle("CAI index distribution among clusters") +
   theme_bw()
+
