@@ -522,6 +522,10 @@ fviz_cluster(mclust.res, data = logRatiosDEG, ellipse.type = "convex") + theme_m
 ### We choose the Mclust method!
 clustRes <- (plot_unSupervised_clust(logRatiosDEG, "Mclust"))
 
+## 3D interactive plot of the MClust result.
+
+
+
 
 ## RNA Features analysis --------
 # Prepare the features data frame.
