@@ -540,8 +540,7 @@ fviz_cluster(mclust.res, data = logRatiosDEG, ellipse.type = "convex") + theme_m
 ### We choose the Mclust method!
 clustRes <- (plot_unSupervised_clust(logRatiosDEG, "Mclust"))
 
-## 3D interactive plot of the MClust result.
-
+# TODO 3D interactive plot of the MClust result.
 
 
 
@@ -692,4 +691,39 @@ ggplot(featDF, aes(x = Cluster, y = CAI, fill = Translation, group = Cluster)) +
 
 
 ## UTRDB analysis ---------------------
+# Read the table from the UTRDB website analysis (the data file is preproccessed.)
+utr_5_table <- read.table("rnaFeat/utrScan_5utr_results.txt", sep = ":", header = TRUE)
+utr_3_table <- read.table("rnaFeat/utrScan_3utr_results.txt", sep = ":", header = TRUE)
 
+# Keep only the features column
+utr_5_slice <- as.data.frame(utr_5_table[, c("trascript_ID", "feature")])
+utr_3_slice <- as.data.frame(utr_3_table[, c("trascript_ID", "feature")])
+
+# Do the count of each feature per transcript.
+utr5 <- as.data.frame(utr_5_slice %>% dplyr::count(trascript_ID, feature, sort = TRUE, .drop = FALSE))
+utr3 <- as.data.frame(utr_3_slice %>% dplyr::count(trascript_ID, feature, sort = TRUE, .drop = FALSE))
+
+# Spread the data.
+utr5_matrix_features <- utr5 %>%  spread(key = feature, value = n)
+utr3_matrix_features <- utr3 %>%  spread(key = feature, value = n)
+
+# Sort out the rownames
+rownames(utr5_matrix_features) <- utr5_matrix_features$trascript_ID
+utr5_matrix_features$trascript_ID <- NULL
+rownames(utr3_matrix_features) <- utr3_matrix_features$trascript_ID
+utr3_matrix_features$trascript_ID <- NULL
+
+
+# 5'UTRs plotting clustering
+# For the 5'UTRs we have a range between 0 and 13 that's why we use 14 colours.
+colours5p <-  c("white", "#C6DBEF", "#4292C6", replicate(3, "#2171B5"), replicate(8, "#08306B"))
+heatmap(as.matrix(utr5_matrix_features), scale = "none", col = colours5p)
+heatmap(as.matrix(utr5_matrix_features[,c(3,8,10)]), scale = "none", col = colours5p)
+
+# 3'UTRs plotting clustering
+# Preprocess the 3'UTR data frame.
+utr3_features_final <- utr3_matrix_features[-c(11, 13, 18, 20)]
+row_sub = apply(utr3_features_final, 1, function(row) any(row != 0 ))
+utr3_features_final <- utr3_features_final[row_sub,]
+colours3p <-  c("white", "#C6DBEF", "#4292C6", "#2171B5", "#08306B")
+heatmap(as.matrix(utr3_features_final), scale = "none", col = colours3p)
