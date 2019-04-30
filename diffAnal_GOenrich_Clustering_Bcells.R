@@ -23,6 +23,7 @@ library(igraph)
 library(Factoshiny)
 library(VennDiagram)
 library(pheatmap)
+library(eulerr)
 
 
 
@@ -99,7 +100,7 @@ lowExpression_filter <- function(e, groups, thres = 3, samples = 1, coefVar = 0.
 }
 
 
-plot_semiSupervised_clust <- function(data, k, method, scale = FALSE, ...){
+plot_semiSupervised_clust <- function(data, k, method, scale = FALSE, title = "", ...){
   # Nicely plots a k-means clustering.
   # Scaling.
   if (scale == TRUE) {
@@ -115,13 +116,19 @@ plot_semiSupervised_clust <- function(data, k, method, scale = FALSE, ...){
   dfcall$idsort <- order(dfcall$idsort)
   # Generate cluster colours.
   clusterCols <- as.character(sort(clustRes$cluster))
+  # Title
+  if (title == "") {
+    ti = paste(method, " clustering of, ", deparse(substitute(data)), " scale: ", as.character(scale))
+  } else {
+    ti = title
+  }
   # Plotting
-  heatmap(as.matrix(data)[order(clustRes$cluster),], Rowv = NA, Colv = NA, scale = "none", labRow = NA, cexCol = 1.5, col = my_palette, RowSideColors = clusterCols, ylab = "Genes", main = paste(method, " clustering with ", k, " clusters scale:", as.character(scale)))
+  heatmap(as.matrix(data)[order(clustRes$cluster),], Rowv = NA, Colv = NA, scale = "none", labRow = NA, cexCol = 1.5, col = my_palette, RowSideColors = clusterCols, ylab = "Genes", main = ti)
   invisible(list(res = clustRes, df = dfcall))
 }
 
 
-plot_unSupervised_clust <- function(data, method, scale = FALSE, ...){
+plot_unSupervised_clust <- function(data, method, scale = FALSE, title = "", ...){
   # Nicely plots a k-means clustering.
   # Scaling.
   if (scale == TRUE) {
@@ -137,8 +144,14 @@ plot_unSupervised_clust <- function(data, method, scale = FALSE, ...){
   dfcall$idsort <- order(dfcall$idsort)
   # Generate cluster colours.
   clusterCols <- as.character(sort(clustRes$classification))
+  # Title
+  if (title == "") {
+    ti = paste(method, " clustering of, ", deparse(substitute(data)), " scale: ", as.character(scale))
+  } else {
+    ti = title
+  }
   # Plotting
-  heatmap(as.matrix(data)[order(clustRes$classification),], Rowv = NA, Colv = NA, scale = "none", labRow = NA, cexCol = 1.5, col = my_palette, RowSideColors = clusterCols, ylab = "Genes", main = paste(method, " clustering, scale:", as.character(scale)))
+  heatmap(as.matrix(data)[order(clustRes$classification),], Rowv = NA, Colv = NA, scale = "none", labRow = NA, cexCol = 1.5, col = my_palette, RowSideColors = clusterCols, ylab = "Genes", main = ti)
   invisible(list(res = clustRes, df = dfcall))
 }
 
@@ -147,7 +160,8 @@ plot_unSupervised_clust <- function(data, method, scale = FALSE, ...){
 
 ## Preprpocess data DE -------------
 # Load the counts table.
-countsTableRaw <- read.table("countsTOTALS_CodingGenes.tsv", header = TRUE, sep = "\t")
+countsTableRaw <- read.table("data/countsTOTALS_CodingGenes.tsv", header = TRUE, sep = "\t")
+
 # Compute the CPM
 cpmall <- as.data.frame(cpm(countsTableRaw))
 
@@ -334,11 +348,9 @@ write(degs, "degs_09042019_geneNames.txt")
 vennALL <- venn.diagram(list(Heavy = rownames(DEH), Light = rownames(DEL), Total = rownames(DET)), NULL, fill = c("darkorange1", "deepskyblue3", "darkolivegreen4"), alpha = c(0.5, 0.5, 0.5), cex = 3)
 
 #Venn diagrams vith eulerr package
-fit_Venn <- euler(c("Heavy_P" = 183, "Light_P" = 164, "Total" = 12,
-                    "Heavy_P&Light_P" = 51, "Heavy_P&Total" = 1, "Light_P&Total" = 3,"Heavy_P&Light_P&Total" = 1),
-                    shape = "ellipse")
+fit_Venn <- euler(c("Heavy_P" = 183, "Light_P" = 164, "Total" = 12, "Heavy_P&Light_P" = 51, "Heavy_P&Total" = 1, "Light_P&Total" = 3, "Heavy_P&Light_P&Total" = 1), shape = "ellipse")
 
-plot(fit_Venn,quantities = TRUE, lty = 1:3, labels = list(font = 4), fills = c("dodgerblue4", "darkgoldenrod1", "cornsilk4"))
+plot(fit_Venn,quantities = TRUE, labels = list(font = 4), fills = c("dodgerblue4", "darkgoldenrod1", "cornsilk4"))
 
 
 #### Preprocess Translation data -------------------------
@@ -442,11 +454,11 @@ egoDEGs_ALL <- enrichGO(gene = genesENS, OrgDb = org.Hs.eg.db, ont = "ALL", pAdj
 dotplot(egoDEGs_ALL, title = "ALL GO enrichment DEGs")
 
 # GO GSEA enrichment
-egogsDEGs_MF <- gseGO(geneList = geneListENS, OrgDb = org.Hs.eg.db, ont = "MF", nPerm = 1000, pvalueCutoff = 0.05, keyType = "ENSEMBL")
+egogsDEGs_MF <- gseGO(geneList = geneListSYMB, OrgDb = org.Hs.eg.db, ont = "MF", nPerm = 1000, pvalueCutoff = 0.05, keyType = "SYMBOL")
 dotplot(egogsDEGs_MF, title = "GSEA GO MF DEGs")
-egogsDEGs_BP <- gseGO(geneList = geneListENS, OrgDb = org.Hs.eg.db, ont = "BP", nPerm = 1000, pvalueCutoff = 0.05, keyType = "ENSEMBL")
+egogsDEGs_BP <- gseGO(geneList = geneListSYMB, OrgDb = org.Hs.eg.db, ont = "BP", nPerm = 1000, pvalueCutoff = 0.05, keyType = "SYMBOL")
 dotplot(egogsDEGs_BP, title = "GSEA GO BP DEGs")
-egogsDEGs_ALL <- gseGO(geneList = geneListENS, OrgDb = org.Hs.eg.db, ont = "ALL", nPerm = 1000, pvalueCutoff = 0.05, keyType = "ENSEMBL")
+egogsDEGs_ALL <- gseGO(geneList = geneListSYMB, OrgDb = org.Hs.eg.db, ont = "ALL", nPerm = 1000, pvalueCutoff = 0.05, keyType = "SYMBOL")
 dotplot(egogsDEGs_ALL, title = "GSEA GO ALL DEGs")
 
 #TODO include the WikiPathways enrichments also!
@@ -474,9 +486,9 @@ cnetplot(egoDEGs_MF, foldChange = geneListENS, colorEdge = TRUE) + ggtitle("CNET
 cnetplot(egoDEGs_BP, foldChange = geneListENS, colorEdge = TRUE) + ggtitle("CNETplot GOenrich DEGs BP")
 cnetplot(egoDEGs_ALL, foldChange = geneListENS, colorEdge = TRUE) + ggtitle("CNETplot GOenrich DEGs ALL")
 
-cnetplot(egogsDEGs_MF, foldChange = geneListENS, colorEdge = TRUE) + ggtitle("CNETplot GOgsea DEGs MF")
-cnetplot(egogsDEGs_BP, foldChange = geneListENS, colorEdge = TRUE) + ggtitle("CNETplot GOgsea DEGs BP")
-cnetplot(egogsDEGs_ALL, foldChange = geneListENS, colorEdge = TRUE) + ggtitle("CNETplot GOgsea DEGs ALL")
+cnetplot(egogsDEGs_MF, foldChange = geneListSYMB, colorEdge = TRUE) + ggtitle("CNETplot GOgsea DEGs MF")
+cnetplot(egogsDEGs_BP, foldChange = geneListSYMB, colorEdge = TRUE) + ggtitle("CNETplot GOgsea DEGs BP")
+cnetplot(egogsDEGs_ALL, foldChange = geneListSYMB, colorEdge = TRUE) + ggtitle("CNETplot GOgsea DEGs ALL")
 
 
 
@@ -609,7 +621,7 @@ ggplot(featDF, aes(x = Cluster, y = MfeBP_5pUTR, fill = Translation, group = Clu
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("5'UTR Mfe_Bp") +
   xlab("Cluster") +
-  ggtitle("MFE pre Bp 5'UTR distribution among clusters") +
+  ggtitle("MFE per bp 5'UTR distribution among clusters") +
   theme_bw()
 
 # Plot the 3UTR lengths boxplots
@@ -653,7 +665,7 @@ ggplot(featDF, aes(x = Cluster, y = MfeBP_3pUTR, fill = Translation, group = Clu
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("3'UTR MFE_BP") +
   xlab("Cluster") +
-  ggtitle("3'UTR MFE per BP distribution among clusters") +
+  ggtitle("3'UTR MFE per bp distribution among clusters") +
   theme_bw()
 
 # Plot the TOP local score boxplots
@@ -677,4 +689,7 @@ ggplot(featDF, aes(x = Cluster, y = CAI, fill = Translation, group = Cluster)) +
   xlab("Cluster") +
   ggtitle("CAI index distribution among clusters") +
   theme_bw()
+
+
+## UTRDB analysis ---------------------
 
