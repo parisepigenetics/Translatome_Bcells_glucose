@@ -157,7 +157,6 @@ plot_unSupervised_clust <- function(data, method, scale = FALSE, title = "", ...
 
 
 
-
 ## Preprpocess data DE -------------
 # Load the counts table.
 countsTableRaw <- read.table("data/countsTOTALS_CodingGenes.tsv", header = TRUE, sep = "\t")
@@ -341,7 +340,7 @@ DEM <- topTable(efitM, coef = 1, p.value = 0.05, lfc = 0.5, number = Inf)
 DET <- topTable(efitT, coef = 1, p.value = 0.05, lfc = 0.5, number = Inf)
 
 degs <- union(rownames(DEL), rownames(DEH))
-write(degs, "degs_09042019_geneNames.txt")
+write(degs, "degs_02052019_geneNames.txt")
 
 ### Venn diagrams -----------
 # Intersection between Light, Heavy, Total
@@ -354,7 +353,7 @@ plot(fit_Venn,quantities = TRUE, labels = list(font = 4), fills = c("dodgerblue4
 
 
 #### Preprocess Translation data -------------------------
-tpmPPglu <- read.table("polysomeProfile_TPM_proteinCoding.csv", header = TRUE, sep = ";")
+tpmPPglu <- read.table("data/polysomeProfile_TPM_proteinCoding.csv", header = TRUE, sep = ";")
 
 row_NON_zero <- apply(tpmPPglu, 1, function(row) all(row != 0))
 tpmPPgluClean <- tpmPPglu[row_NON_zero,]
@@ -477,6 +476,7 @@ barplot(ekegMDGEs, title = "DEGs KEGG modules enrichment")
 # Enrich REACTOME Pathways
 ekePDEGs <- enrichPathway(gene = genesENTREZ, organism = "human", pvalueCutoff = 0.05)
 barplot(ekePDEGs, showCategory = 30, title = "DEGs REACTOME Pathways enrichment")
+dotplot(ekePDEGs, showCategory = 30, title = "DEGs REACTOME Pathways enrichment")
 
 
 ### Enrichment Visualisation ------------------------------
@@ -494,7 +494,7 @@ cnetplot(egogsDEGs_ALL, foldChange = geneListSYMB, colorEdge = TRUE) + ggtitle("
 
 #### Clustering -------------------------------------------
 my_palette <- brewer.pal(n = 11, name = "RdYlGn")
-c
+
 ### Hierarchical Clustering -------------------------------
 # Clustering.
 hc_S <- hclust(dist(logRatiosDEG), method = "single")
@@ -577,7 +577,7 @@ ggplot(featDF, aes(x = Cluster, y = coding_len, fill = Translation, group = Clus
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("Coding Length") +
   xlab("Cluster") +
-  ggtitle("Coding length distribution among clusters") +
+  ggtitle("Coding length distribution of the 6 MClust clusters") +
   theme_bw()
 
 # Plot the 5UTR length boxplots
@@ -588,7 +588,7 @@ ggplot(featDF, aes(x = Cluster, y = len_5pUTR, fill = Translation, group = Clust
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("5'UTR Length") +
   xlab("Cluster") +
-  ggtitle("5'UTR length distribution among clusters") +
+  ggtitle("5'UTR length distribution of the 6 Mclust clusters") +
   theme_bw()
 
 # Plot the GC 5'UTR boxplots
@@ -599,7 +599,7 @@ ggplot(featDF, aes(x = Cluster, y = GC_5pUTR, fill = Translation, group = Cluste
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("5'UTR GC") +
   xlab("Cluster") +
-  ggtitle("GC 5'UTR distribution among clusters") +
+  ggtitle("5'UTR GC distribution of the 6 Mclust clusters") +
   theme_bw()
 
 # Plot the 5UTR MFE boxplots
@@ -610,7 +610,7 @@ ggplot(featDF, aes(x = Cluster, y = MFE_5pUTR, fill = Translation, group = Clust
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("5'UTR MFE") +
   xlab("Cluster") +
-  ggtitle("MFE 5'UTR distribution among clusters") +
+  ggtitle("5'UTR MFE distribution of the 6 Mclust clusters") +
   theme_bw()
 
 # Plot the 5UTR MFE_BP boxplots
@@ -620,7 +620,7 @@ ggplot(featDF, aes(x = Cluster, y = MfeBP_5pUTR, fill = Translation, group = Clu
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("5'UTR Mfe_Bp") +
   xlab("Cluster") +
-  ggtitle("MFE per bp 5'UTR distribution among clusters") +
+  ggtitle("5'UTR MFE per bp distribution of the 6 Mclust clusters") +
   theme_bw()
 
 # Plot the 3UTR lengths boxplots
@@ -631,7 +631,7 @@ ggplot(featDF, aes(x = Cluster, y = len_3pUTR, fill = Translation, group = Clust
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("3'UTR length") +
   xlab("Cluster") +
-  ggtitle("3'UTR length distribution among clusters") +
+  ggtitle("3'UTR length distribution of the 6 Mclust clusters") +
   theme_bw()
 
 # Plot the 3UTR GC lengths boxplots #TODO FIX THE COLUMN NAME
@@ -642,7 +642,7 @@ ggplot(featDF, aes(x = Cluster, y = len_3pUTR.1, fill = Translation, group = Clu
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("3'UTR GC") +
   xlab("Cluster") +
-  ggtitle("3'UTR GC distribution among clusters") +
+  ggtitle("3'UTR GC distribution of the 6 Mclust clusters") +
   theme_bw()
 
 # Plot the 3UTR MFE lengths boxplots
@@ -653,7 +653,7 @@ ggplot(featDF, aes(x = Cluster, y = MFE_3pUTR, fill = Translation, group = Clust
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("3'UTR MFE") +
   xlab("Cluster") +
-  ggtitle("3'UTR MFE distribution among clusters") +
+  ggtitle("3'UTR MFE distribution of the 6 Mclust clusters") +
   theme_bw()
 
 # Plot the 3UTR MFE_BP lengths boxplots
@@ -664,7 +664,7 @@ ggplot(featDF, aes(x = Cluster, y = MfeBP_3pUTR, fill = Translation, group = Clu
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("3'UTR MFE_BP") +
   xlab("Cluster") +
-  ggtitle("3'UTR MFE per bp distribution among clusters") +
+  ggtitle("3'UTR MFE per bp distribution of the 6 Mclust clusters") +
   theme_bw()
 
 # Plot the TOP local score boxplots
@@ -675,7 +675,7 @@ ggplot(featDF, aes(x = Cluster, y = TOP_localScore, fill = Translation, group = 
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("TOP local score") +
   xlab("Cluster") +
-  ggtitle("TOP local score distribution among clusters") +
+  ggtitle("TOP local score distribution of the 6 Mclust clusters") +
   theme_bw()
 
 # Plot the CAI index boxplots
@@ -686,7 +686,7 @@ ggplot(featDF, aes(x = Cluster, y = CAI, fill = Translation, group = Cluster)) +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("CAI index") +
   xlab("Cluster") +
-  ggtitle("CAI index distribution among clusters") +
+  ggtitle("CAI index distribution of the 6 Mclust clusters") +
   theme_bw()
 
 
@@ -727,3 +727,4 @@ row_sub = apply(utr3_features_final, 1, function(row) any(row != 0 ))
 utr3_features_final <- utr3_features_final[row_sub,]
 colours3p <-  c("white", "#C6DBEF", "#4292C6", "#2171B5", "#08306B")
 heatmap(as.matrix(utr3_features_final), scale = "none", col = colours3p)
+heatmap(as.matrix(utr3_features_final[,c(2,4,6,8,11,14,16)]), scale = "none", col = colours3p)
