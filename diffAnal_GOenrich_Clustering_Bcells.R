@@ -572,7 +572,8 @@ for (r in row.names(featDF)) {
 # Plot the Coding length boxplots
 ggplot(featDF, aes(x = Cluster, y = coding_len, fill = Translation, group = Cluster)) +
   coord_cartesian(ylim = c(0, 4000)) +
-  geom_boxplot(varwidth = TRUE, alpha = 0.95, notch = TRUE) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
   theme(legend.position = "topleft") +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("Coding Length") +
@@ -583,7 +584,8 @@ ggplot(featDF, aes(x = Cluster, y = coding_len, fill = Translation, group = Clus
 # Plot the 5UTR length boxplots
 ggplot(featDF, aes(x = Cluster, y = len_5pUTR, fill = Translation, group = Cluster)) +
   coord_cartesian(ylim = c(0, 1000)) +
-  geom_boxplot(varwidth = TRUE, alpha = 0.95, notch = TRUE) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
   theme(legend.position = "topleft") +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("5'UTR Length") +
@@ -594,7 +596,8 @@ ggplot(featDF, aes(x = Cluster, y = len_5pUTR, fill = Translation, group = Clust
 # Plot the GC 5'UTR boxplots
 ggplot(featDF, aes(x = Cluster, y = GC_5pUTR, fill = Translation, group = Cluster)) +
   coord_cartesian(ylim = c(35, 100)) +
-  geom_boxplot(varwidth = TRUE, alpha = 0.95, notch = TRUE) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
   theme(legend.position = "topleft") +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("5'UTR GC") +
@@ -605,7 +608,8 @@ ggplot(featDF, aes(x = Cluster, y = GC_5pUTR, fill = Translation, group = Cluste
 # Plot the 5UTR MFE boxplots
 ggplot(featDF, aes(x = Cluster, y = MFE_5pUTR, fill = Translation, group = Cluster)) +
   coord_cartesian(ylim = c(-400, 0)) +
-  geom_boxplot(varwidth = TRUE, alpha = 0.95, notch = TRUE) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
   theme(legend.position = "topleft") +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("5'UTR MFE") +
@@ -615,7 +619,8 @@ ggplot(featDF, aes(x = Cluster, y = MFE_5pUTR, fill = Translation, group = Clust
 
 # Plot the 5UTR MFE_BP boxplots
 ggplot(featDF, aes(x = Cluster, y = MfeBP_5pUTR, fill = Translation, group = Cluster)) +
-  geom_boxplot(varwidth = TRUE, alpha = 0.95, notch = TRUE) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
   theme(legend.position = "topleft") +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("5'UTR Mfe_Bp") +
@@ -626,7 +631,8 @@ ggplot(featDF, aes(x = Cluster, y = MfeBP_5pUTR, fill = Translation, group = Clu
 # Plot the 3UTR lengths boxplots
 ggplot(featDF, aes(x = Cluster, y = len_3pUTR, fill = Translation, group = Cluster)) +
   coord_cartesian(ylim = c(0, 4000)) +
-  geom_boxplot(varwidth = TRUE, alpha = 0.95, notch = TRUE) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
   theme(legend.position = "topleft") +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("3'UTR length") +
@@ -637,7 +643,8 @@ ggplot(featDF, aes(x = Cluster, y = len_3pUTR, fill = Translation, group = Clust
 # Plot the 3UTR GC lengths boxplots #TODO FIX THE COLUMN NAME
 ggplot(featDF, aes(x = Cluster, y = len_3pUTR.1, fill = Translation, group = Cluster)) +
   #coord_cartesian(ylim = c(0, 4000)) +
-  geom_boxplot(varwidth = TRUE, alpha = 0.95, notch = TRUE) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
   theme(legend.position = "topleft") +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("3'UTR GC") +
@@ -648,7 +655,8 @@ ggplot(featDF, aes(x = Cluster, y = len_3pUTR.1, fill = Translation, group = Clu
 # Plot the 3UTR MFE lengths boxplots
 ggplot(featDF, aes(x = Cluster, y = MFE_3pUTR, fill = Translation, group = Cluster)) +
   coord_cartesian(ylim = c(-1500, 0)) +
-  geom_boxplot(varwidth = TRUE, alpha = 0.95, notch = TRUE) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
   theme(legend.position = "topleft") +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("3'UTR MFE") +
@@ -659,7 +667,8 @@ ggplot(featDF, aes(x = Cluster, y = MFE_3pUTR, fill = Translation, group = Clust
 # Plot the 3UTR MFE_BP lengths boxplots
 ggplot(featDF, aes(x = Cluster, y = MfeBP_3pUTR, fill = Translation, group = Cluster)) +
   #coord_cartesian(ylim = c(-1500, 0)) +
-  geom_boxplot(varwidth = TRUE, alpha = 0.95, notch = TRUE) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
   theme(legend.position = "topleft") +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("3'UTR MFE_BP") +
@@ -670,7 +679,8 @@ ggplot(featDF, aes(x = Cluster, y = MfeBP_3pUTR, fill = Translation, group = Clu
 # Plot the TOP local score boxplots
 ggplot(featDF, aes(x = Cluster, y = TOP_localScore, fill = Translation, group = Cluster)) +
   #coord_cartesian(ylim = c(-1500, 0)) +
-  geom_boxplot(varwidth = TRUE, alpha = 0.95, notch = TRUE) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
   theme(legend.position = "topleft") +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("TOP local score") +
@@ -681,7 +691,8 @@ ggplot(featDF, aes(x = Cluster, y = TOP_localScore, fill = Translation, group = 
 # Plot the CAI index boxplots
 ggplot(featDF, aes(x = Cluster, y = CAI, fill = Translation, group = Cluster)) +
   #coord_cartesian(ylim = c(-1500, 0)) +
-  geom_boxplot(varwidth = TRUE, alpha = 0.95, notch = TRUE) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
   theme(legend.position = "topleft") +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("CAI index") +
