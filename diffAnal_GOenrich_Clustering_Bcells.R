@@ -739,3 +739,14 @@ utr3_features_final <- utr3_features_final[row_sub,]
 colours3p <-  c("white", "#C6DBEF", "#4292C6", "#2171B5", "#08306B")
 heatmap(as.matrix(utr3_features_final), scale = "none", col = colours3p)
 heatmap(as.matrix(utr3_features_final[,c(2,4,6,8,11,14,16)]), scale = "none", col = colours3p)
+
+
+
+
+#G4 analysis
+G4_genes <- read.table("data_results//G4_5UTR_names.txt", header = F, sep = ";")
+
+G4_unique <- unique(G4_genes$V1)
+degs_g4_names <- intersect(G4_unique, degs)
+G4_names_cluster <-clusterGeneIDs[degs_g4_names,,drop=FALSE]
+hist(G4_names_cluster,nclass = 50)
