@@ -750,3 +750,23 @@ G4_unique <- unique(G4_genes$V1)
 degs_g4_names <- intersect(G4_unique, degs)
 G4_names_cluster <-clusterGeneIDs[degs_g4_names,,drop=FALSE]
 hist(G4_names_cluster,nclass = 50)
+
+
+freq_g4_cluster <- as.data.frame((table(G4_names_cluster$cluster)))
+freq_cluster <- as.data.frame((table(clusterGeneIDs$cluster)))
+
+freq_cluster_g4cluster <- cbind(freq_cluster, freq_g4_cluster$Freq)
+colnames(freq_cluster_g4cluster) <- c("ClusterID","Size","G4_size")
+
+
+freq_cluster_g4cluster <- freq_cluster_g4cluster %>% mutate(Percentage = (G4_size/Size)*100)
+hist(freq_cluster_g4cluster$Percentage,nclass = 25)
+
+translation <- c("Up","Inter","Inter", "Down", "Down", "Up")
+freq_cluster_g4cluster$translation <- translation
+
+ggplot(freq_cluster_g4cluster, aes(x=ClusterID, y=Percentage, fill=translation, group = ClusterID)) +
+  geom_bar(stat="identity", alpha = 0.6)+
+  theme_minimal() +
+  ggtitle("Percentrage of G-quadruplex genes of the 6 Mclust clusters")
+
