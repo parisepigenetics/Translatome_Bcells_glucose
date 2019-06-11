@@ -1,4 +1,4 @@
-## Load packages ----
+## Load packages ----------------------
 library(tidyverse)
 library(ggplot2)
 library(plotly)
@@ -422,9 +422,9 @@ clustRes <- (plot_unSupervised_clust(logRatiosDEG, "Mclust"))
 ## RNA Features analysis --------
 # Prepare the features data frame.
 clusterGeneIDs <- clustRes$df["cluster"]
-featuresDF <- read.table("rnaFeat/degs_09042019_ENSEMBL.tab", header = TRUE, sep = ";")
+featuresDF <- read.table("rnaFeat/201905/degs_02052019_ENSEMBL.tab", header = TRUE, sep = ";")
 # Create a slice with only the numeric values of the data frame.
-featDF <- featuresDF[,c(1:13)]
+featDF <- featuresDF[,c(1:14)]
 
 # Add the clustering column
 featDF["Cluster"] <- 0
@@ -454,6 +454,18 @@ ggplot(featDF, aes(x = Cluster, y = coding_len, fill = Translation, group = Clus
   ylab("Coding Length") +
   xlab("Cluster") +
   ggtitle("Coding length distribution of the 6 MClust clusters") +
+  theme_bw()
+
+# Plot the GC content boxplots
+ggplot(featDF, aes(x = Cluster, y = GC, fill = Translation, group = Cluster)) +
+  coord_cartesian(ylim = c(25, 80)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
+  theme(legend.position = "topleft") +
+  scale_x_discrete(limits = c("1","2","3","4","5","6")) +
+  ylab("GC") +
+  xlab("Cluster") +
+  ggtitle("Transcript GC content distribution of the 6 Mclust clusters") +
   theme_bw()
 
 # Plot the 5UTR length boxplots
