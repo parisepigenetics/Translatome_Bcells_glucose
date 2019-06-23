@@ -422,9 +422,9 @@ clustRes <- (plot_unSupervised_clust(logRatiosDEG, "Mclust"))
 ## RNA Features analysis --------
 # Prepare the features data frame.
 clusterGeneIDs <- clustRes$df["cluster"]
-featuresDF <- read.table("rnaFeat/201905/degs_02052019_ENSEMBL.tab", header = TRUE, sep = ";")
+featuresDF <- read.table("rnaFeat/201905/degs_02052019_ENSEMBL.tab", header = TRUE, sep = "\t")
 # Create a slice with only the numeric values of the data frame.
-featDF <- featuresDF[,c(1:14)]
+featDF <- featuresDF[,c(1:15)]
 
 # Add the clustering column
 featDF["Cluster"] <- 0
@@ -589,7 +589,7 @@ ggplot(featDF, aes(x = Cluster, y = CAI, fill = Translation, group = Cluster)) +
 
 
 ## UTRDB analysis ---------------------
-# Read the table from the UTRDB website analysis (the data file is preproccessed.)
+# Read the table from the UTRDB website analysis (the data file is preproccessed!!!!)
 utr_5_table <- read.table("rnaFeat/utrScan_5utr_results.txt", sep = ":", header = TRUE)
 utr_3_table <- read.table("rnaFeat/utrScan_3utr_results.txt", sep = ":", header = TRUE)
 
@@ -635,7 +635,7 @@ G4_genes <- read.table("data_results//G4_5UTR_names.txt", header = F, sep = ";")
 
 G4_unique <- unique(G4_genes$V1)
 degs_g4_names <- intersect(G4_unique, degs)
-G4_names_cluster <-clusterGeneIDs[degs_g4_names,,drop=FALSE]
+G4_names_cluster <- clusterGeneIDs[degs_g4_names,, drop = FALSE]
 hist(G4_names_cluster,nclass = 50)
 
 
@@ -652,8 +652,7 @@ hist(freq_cluster_g4cluster$Percentage,nclass = 25)
 translation <- c("Up","Inter","Inter", "Down", "Down", "Up")
 freq_cluster_g4cluster$translation <- translation
 
-ggplot(freq_cluster_g4cluster, aes(x=ClusterID, y=Percentage, fill=translation, group = ClusterID)) +
-  geom_bar(stat="identity", alpha = 0.6)+
+ggplot(freq_cluster_g4cluster, aes(x = ClusterID, y = Percentage, fill = translation, group = ClusterID)) +
+  geom_bar(stat = "identity", alpha = 0.6) +
   theme_minimal() +
   ggtitle("Percentrage of G-quadruplex genes of the 6 Mclust clusters")
-
