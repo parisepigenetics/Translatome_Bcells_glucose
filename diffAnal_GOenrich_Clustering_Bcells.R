@@ -588,6 +588,67 @@ ggplot(featDF, aes(x = Cluster, y = CAI, fill = Translation, group = Cluster)) +
   theme_bw()
 
 
+
+## Translation efficiency analysis. --------------------
+
+# Prepare the datasets.
+dd <- read.table("data/polysomeProfile_TPM_proteinCoding.csv", header = TRUE, sep = ";")
+rs <- apply(dd, 1, function(row) all(row != 0))
+dd <- dd[rs,]
+monoHavg <- rowMeans(dd[,1:3])
+monoLavg <- rowMeans(dd[,4:6])
+lightHavg <- rowMeans(dd[,7:9])
+lightLavg <- rowMeans(dd[,10:12])
+heavyHavg <- rowMeans(dd[,13:15])
+heavyLavg <- rowMeans(dd[,16:18])
+totalHavg <- rowMeans(dd[,19:21])
+totalLavg <- rowMeans(dd[,22:24])
+tpmAvgAll <- data.frame("MonoL" = monoLavg, "MonoH" = monoHavg, "LightL" = lightLavg, "LightH" = lightHavg, "HeavyL" = heavyLavg, "HeavyH" = heavyHavg, "TotalL" = totalLavg, "TotalH" = totalHavg)
+tpmTrEffAll <- data.frame("MonoL" = monoLavg/totalLavg, "MonoH" = monoHavg/totalHavg, "LightL" = lightLavg/totalLavg, "LightH" = lightHavg/totalHavg, "HeavyL" = heavyLavg/totalLavg, "HeavyH" = heavyHavg/totalHavg)
+tpmTrEffAll.m <- reshape2::melt(as.matrix(tpmTrEffAll), id.vars = NULL)
+colnames(tpmTrEffAll.m) <- c("GeneID", "Experiment", "TransEfficiency")
+
+# First exploratory plot of translation efficiency.
+ggplot(tpmTrEffAll.m, aes(x = Experiment, y = TransEfficiency, color = Experiment)) + geom_violin(trim = TRUE) + geom_boxplot(width = 0.1, outlier.alpha = 0.2) + theme_minimal() + labs(x = "Experiment", y = "Trans. Efficiency")
+
+# Read all the flatten and pre-processed file.
+tpmTrEffAll.f <- read.table("trans_efficiency/tpm_transEff_All_flat.csv", header = TRUE, sep = ",")
+# Plot it
+ggplot(tpmTrEffAll.f, aes(x = Experiment, y = TransEfficiency)) + geom_violin(aes(fill = Fraction)) + geom_boxplot(width = 0.1, outlier.alpha = 0.2) + theme_minimal() + labs(x = "Experiment", y = "Trans. Efficiency") + ylim(0, 7)
+
+# Translation efficiency, low high glucose.
+tpmTrEff <- data.frame("HighGlu" = tpmTrEffAll$LightH + tpmTrEffAll$HeavyH, "LowGlu" = tpmTrEffAll$LightL + tpmTrEffAll$HeavyL)
+rownames(tpmTrEff) <- rownames(tpmTrEffAll)
+tpmTrEff$GeneID <- rownames(tpmTrEff)
+
+# Translation efficiency difference.
+diffTransEff <- data.frame(diffTransEff = (tpmTrEff$HighGlu - tpmTrEff$LowGlu))
+rownames(diffTransEff) <- rownames(tpmTrEff)
+
+# Keep the most differentially translated gene names in a file.
+diffTransl_genes <- rownames(head(diffTransEff[with(diffTransEff, order(-diffTransEff)),, ], n = 200))
+write(diffTransl_genes, file = "most_diffTrans_HiLowGlu.txt")
+
+# Generate a data frame of the average of trans-eff in low and high glucose.
+tpmTrEff <- data.frame("HighGlu" = (tpmTrEffAll$LightH + tpmTrEffAll$HeavyH)/2, "LowGlu" = (tpmTrEffAll$LightL + tpmTrEffAll$HeavyL)/2)
+rownames(tpmTrEff) <- rownames(tpmTrEffAll)
+tpmTrEff.m <- reshape2::melt(as.matrix(tpmTrEff), id.vars = NULL)
+colnames(tpmTrEff.m) <- c("GeneID", "Treatment", "TranslEff")
+# Have a look of the different translation efficiencies in low anf high.
+ggplot(tpmTrEff.m, aes(x = Treatment, y = TranslEff)) + geom_violin(aes(fill = Treatment), draw_quantiles = c(0.25, 0.5, 0.75), alpha = 0.6, trim = TRUE) +  geom_boxplot(width = 0.2, outlier.alpha = 0.2, notch = TRUE) + theme_minimal() + labs(x = "Experiment", y = "Trans. Efficiency") + ylim(0, 6)
+
+# Keep the most translated gene names in high glucose in a file
+effTransl_Low <- rownames(head(tpmTrEff[with(tpmTrEff, order(-LowGlu)),,], n = 200))
+write(effTransl_Low, file = "most_EffTransl_LowGlu.txt")
+effTransl_High <- rownames(head(tpmTrEff[with(tpmTrEff, order(-HighGlu)),,], n = 200))
+write(effTransl_High, file = "most_EffTransl_HighGlu.txt")
+
+# Compare all the most differential translated, the most efficiently tranlated in high and most efficiently tranlated in low genes.
+translEffiency <- list(TranslDiff = diffTransl_genes, TranslEff_Hi = effTransl_High, TranslEff_Low = effTransl_Low)
+plot(euler(translEffiency, shape = "ellipse"), quantities = TRUE)
+
+
+
 ## UTRDB analysis ---------------------
 # Read the table from the UTRDB website analysis (the data file is preproccessed!!!!)
 utr_5_table <- read.table("rnaFeat/utrScan_5utr_results.txt", sep = ":", header = TRUE)
@@ -626,7 +687,6 @@ utr3_features_final <- utr3_features_final[row_sub,]
 colours3p <-  c("white", "#C6DBEF", "#4292C6", "#2171B5", "#08306B")
 heatmap(as.matrix(utr3_features_final), scale = "none", col = colours3p)
 heatmap(as.matrix(utr3_features_final[,c(2,4,6,8,11,14,16)]), scale = "none", col = colours3p)
-
 
 
 
