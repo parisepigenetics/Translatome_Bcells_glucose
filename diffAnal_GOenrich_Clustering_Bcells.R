@@ -24,7 +24,7 @@ library(Factoshiny)
 library(VennDiagram)
 library(pheatmap)
 library(eulerr)
-
+library(RVenn)
 
 
 ## Functions ----------------------------------------------
@@ -449,10 +449,11 @@ ggplot(featDF, aes(x = Cluster, y = coding_len, fill = Translation, group = Clus
   coord_cartesian(ylim = c(0, 4000)) +
   geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
   geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill") +
   theme(legend.position = "topleft") +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("Coding Length") +
-  xlab("Cluster") +
+  xlab("Clusters") +
   ggtitle("Coding length distribution of the 6 MClust clusters") +
   theme_bw()
 
@@ -461,10 +462,11 @@ ggplot(featDF, aes(x = Cluster, y = GC, fill = Translation, group = Cluster)) +
   coord_cartesian(ylim = c(25, 80)) +
   geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
   geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "dodge") +
   theme(legend.position = "topleft") +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("GC") +
-  xlab("Cluster") +
+  xlab("Clusters") +
   ggtitle("Transcript GC content distribution of the 6 Mclust clusters") +
   theme_bw()
 
@@ -473,6 +475,7 @@ ggplot(featDF, aes(x = Cluster, y = len_5pUTR, fill = Translation, group = Clust
   coord_cartesian(ylim = c(0, 1000)) +
   geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
   geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill") +
   theme(legend.position = "topleft") +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("5'UTR Length") +
@@ -485,6 +488,7 @@ ggplot(featDF, aes(x = Cluster, y = GC_5pUTR, fill = Translation, group = Cluste
   coord_cartesian(ylim = c(35, 100)) +
   geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
   geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "dodge") +
   theme(legend.position = "topleft") +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("5'UTR GC") +
@@ -497,6 +501,7 @@ ggplot(featDF, aes(x = Cluster, y = MFE_5pUTR, fill = Translation, group = Clust
   coord_cartesian(ylim = c(-400, 0)) +
   geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
   geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "dodge") +
   theme(legend.position = "topleft") +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("5'UTR MFE") +
@@ -508,6 +513,7 @@ ggplot(featDF, aes(x = Cluster, y = MFE_5pUTR, fill = Translation, group = Clust
 ggplot(featDF, aes(x = Cluster, y = MfeBP_5pUTR, fill = Translation, group = Cluster)) +
   geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
   geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "dodge") +
   theme(legend.position = "topleft") +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("5'UTR Mfe_Bp") +
@@ -520,6 +526,7 @@ ggplot(featDF, aes(x = Cluster, y = len_3pUTR, fill = Translation, group = Clust
   coord_cartesian(ylim = c(0, 4000)) +
   geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
   geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill") +
   theme(legend.position = "topleft") +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("3'UTR length") +
@@ -532,6 +539,7 @@ ggplot(featDF, aes(x = Cluster, y = len_3pUTR.1, fill = Translation, group = Clu
   #coord_cartesian(ylim = c(0, 4000)) +
   geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
   geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "dodge") +
   theme(legend.position = "topleft") +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("3'UTR GC") +
@@ -544,6 +552,7 @@ ggplot(featDF, aes(x = Cluster, y = MFE_3pUTR, fill = Translation, group = Clust
   coord_cartesian(ylim = c(-1500, 0)) +
   geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
   geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "dodge") +
   theme(legend.position = "topleft") +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("3'UTR MFE") +
@@ -556,6 +565,7 @@ ggplot(featDF, aes(x = Cluster, y = MfeBP_3pUTR, fill = Translation, group = Clu
   #coord_cartesian(ylim = c(-1500, 0)) +
   geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
   geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "dodge") +
   theme(legend.position = "topleft") +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("3'UTR MFE_BP") +
@@ -568,6 +578,7 @@ ggplot(featDF, aes(x = Cluster, y = TOP_localScore, fill = Translation, group = 
   #coord_cartesian(ylim = c(-1500, 0)) +
   geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
   geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill") +
   theme(legend.position = "topleft") +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("TOP local score") +
@@ -577,9 +588,10 @@ ggplot(featDF, aes(x = Cluster, y = TOP_localScore, fill = Translation, group = 
 
 # Plot the CAI index boxplots
 ggplot(featDF, aes(x = Cluster, y = CAI, fill = Translation, group = Cluster)) +
-  #coord_cartesian(ylim = c(-1500, 0)) +
+  coord_cartesian(ylim = c(0.65, 0.9)) +
   geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
   geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "stack") +
   theme(legend.position = "topleft") +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("CAI index") +
@@ -589,12 +601,15 @@ ggplot(featDF, aes(x = Cluster, y = CAI, fill = Translation, group = Cluster)) +
 
 
 
-## Translation efficiency analysis. --------------------
+## Translation Ratio analyses --------------------
 
 # Prepare the datasets.
 dd <- read.table("data/polysomeProfile_TPM_proteinCoding.csv", header = TRUE, sep = ";")
 rs <- apply(dd, 1, function(row) all(row != 0))
 dd <- dd[rs,]
+# Filter also for the lowly expressed genes from the diff. analysis before.
+dd <- dd[cpm_Filt_names,]
+# Get the means of each condition.
 monoHavg <- rowMeans(dd[,1:3])
 monoLavg <- rowMeans(dd[,4:6])
 lightHavg <- rowMeans(dd[,7:9])
@@ -604,48 +619,226 @@ heavyLavg <- rowMeans(dd[,16:18])
 totalHavg <- rowMeans(dd[,19:21])
 totalLavg <- rowMeans(dd[,22:24])
 tpmAvgAll <- data.frame("MonoL" = monoLavg, "MonoH" = monoHavg, "LightL" = lightLavg, "LightH" = lightHavg, "HeavyL" = heavyLavg, "HeavyH" = heavyHavg, "TotalL" = totalLavg, "TotalH" = totalHavg)
-tpmTrEffAll <- data.frame("MonoL" = monoLavg/totalLavg, "MonoH" = monoHavg/totalHavg, "LightL" = lightLavg/totalLavg, "LightH" = lightHavg/totalHavg, "HeavyL" = heavyLavg/totalLavg, "HeavyH" = heavyHavg/totalHavg)
-tpmTrEffAll.m <- reshape2::melt(as.matrix(tpmTrEffAll), id.vars = NULL)
-colnames(tpmTrEffAll.m) <- c("GeneID", "Experiment", "TransEfficiency")
+tpmTrRatAll <- data.frame("MonoL" = monoLavg/totalLavg, "MonoH" = monoHavg/totalHavg, "LightL" = lightLavg/totalLavg, "LightH" = lightHavg/totalHavg, "HeavyL" = heavyLavg/totalLavg, "HeavyH" = heavyHavg/totalHavg)
+tpmTrRatAll.m <- reshape2::melt(as.matrix(tpmTrRatAll), id.vars = NULL)
+colnames(tpmTrRatAll.m) <- c("GeneID", "Experiment", "TranslRatio")
 
 # First exploratory plot of translation efficiency.
-ggplot(tpmTrEffAll.m, aes(x = Experiment, y = TransEfficiency, color = Experiment)) + geom_violin(trim = TRUE) + geom_boxplot(width = 0.1, outlier.alpha = 0.2) + theme_minimal() + labs(x = "Experiment", y = "Trans. Efficiency")
+ggplot(tpmTrRatAll.m, aes(x = Experiment, y = TranslRatio, color = Experiment)) + geom_violin(trim = TRUE) + geom_boxplot(width = 0.1, outlier.alpha = 0.2) + theme_minimal() + labs(x = "Experiment", y = "Transl. Ratio") + ylim(0, 7)
 
-# Read all the flatten and pre-processed file.
-tpmTrEffAll.f <- read.table("trans_efficiency/tpm_transEff_All_flat.csv", header = TRUE, sep = ",")
+## Read all the flatten and pre-processed file.
+#tpmTrEffAll.f <- read.table("trans_ratio/tpm_transEff_All_flat.csv", header = TRUE, sep = ",")
 # Plot it
-ggplot(tpmTrEffAll.f, aes(x = Experiment, y = TransEfficiency)) + geom_violin(aes(fill = Fraction)) + geom_boxplot(width = 0.1, outlier.alpha = 0.2) + theme_minimal() + labs(x = "Experiment", y = "Trans. Efficiency") + ylim(0, 7)
+#ggplot(tpmTrEffAll.f, aes(x = Experiment, y = TransEfficiency)) + geom_violin(aes(fill = Fraction)) + geom_boxplot(width = 0.1, outlier.alpha = 0.2) + theme_minimal() + labs(x = "Experiment", y = "Trans. Efficiency") + ylim(0, 7)
 
-# Translation efficiency, low high glucose.
-tpmTrEff <- data.frame("HighGlu" = tpmTrEffAll$LightH + tpmTrEffAll$HeavyH, "LowGlu" = tpmTrEffAll$LightL + tpmTrEffAll$HeavyL)
-rownames(tpmTrEff) <- rownames(tpmTrEffAll)
-tpmTrEff$GeneID <- rownames(tpmTrEff)
+# Translation ratio, low high glucose.
+tpmTrRat <- data.frame("HighGlu" = tpmTrRatAll$LightH + tpmTrRatAll$HeavyH, "LowGlu" = tpmTrRatAll$LightL + tpmTrRatAll$HeavyL)
+rownames(tpmTrRat) <- rownames(tpmTrRatAll)
+tpmTrRat$GeneID <- rownames(tpmTrRat)
 
 # Translation efficiency difference.
-diffTransEff <- data.frame(diffTransEff = (tpmTrEff$HighGlu - tpmTrEff$LowGlu))
-rownames(diffTransEff) <- rownames(tpmTrEff)
+diffTranslRat <- data.frame(difTransRat = (tpmTrRat$HighGlu - tpmTrRat$LowGlu), row.names = rownames(tpmTrRat))
 
-# Keep the most differentially translated gene names in a file.
-diffTransl_genes <- rownames(head(diffTransEff[with(diffTransEff, order(-diffTransEff)),, ], n = 200))
+# Keep the 200 most differentially translated gene names in a file.
+diffTransl_genes <- rownames(head(diffTranslRat[with(diffTranslRat, order(-difTransRat)),, drop = FALSE], n = 200))
 write(diffTransl_genes, file = "most_diffTrans_HiLowGlu.txt")
 
 # Generate a data frame of the average of trans-eff in low and high glucose.
-tpmTrEff <- data.frame("HighGlu" = (tpmTrEffAll$LightH + tpmTrEffAll$HeavyH)/2, "LowGlu" = (tpmTrEffAll$LightL + tpmTrEffAll$HeavyL)/2)
-rownames(tpmTrEff) <- rownames(tpmTrEffAll)
-tpmTrEff.m <- reshape2::melt(as.matrix(tpmTrEff), id.vars = NULL)
-colnames(tpmTrEff.m) <- c("GeneID", "Treatment", "TranslEff")
+tpmTrRat <- data.frame("HighGlu" = (tpmTrEffRat$LightH + tpmTrEffRat$HeavyH)/2, "LowGlu" = (tpmTrEffRat$LightL + tpmTrEffRat$HeavyL)/2)
+rownames(tpmTrRat) <- rownames(tpmTrRatAll)
+tpmTrRat.m <- reshape2::melt(as.matrix(tpmTrRat), id.vars = NULL)
+colnames(tpmTrRat.m) <- c("GeneID", "Treatment", "TranslRat")
 # Have a look of the different translation efficiencies in low anf high.
-ggplot(tpmTrEff.m, aes(x = Treatment, y = TranslEff)) + geom_violin(aes(fill = Treatment), draw_quantiles = c(0.25, 0.5, 0.75), alpha = 0.6, trim = TRUE) +  geom_boxplot(width = 0.2, outlier.alpha = 0.2, notch = TRUE) + theme_minimal() + labs(x = "Experiment", y = "Trans. Efficiency") + ylim(0, 6)
+ggplot(tpmTrRat.m, aes(x = Treatment, y = TranslRat)) + geom_violin(aes(fill = Treatment), draw_quantiles = c(0.25, 0.5, 0.75), alpha = 0.6, trim = TRUE) +  geom_boxplot(width = 0.2, outlier.alpha = 0.2, notch = TRUE) + theme_minimal() + labs(x = "Experiment", y = "Transl. Ratio") + ylim(0, 10)
 
 # Keep the most translated gene names in high glucose in a file
-effTransl_Low <- rownames(head(tpmTrEff[with(tpmTrEff, order(-LowGlu)),,], n = 200))
-write(effTransl_Low, file = "most_EffTransl_LowGlu.txt")
-effTransl_High <- rownames(head(tpmTrEff[with(tpmTrEff, order(-HighGlu)),,], n = 200))
-write(effTransl_High, file = "most_EffTransl_HighGlu.txt")
+low_TranslRat <- rownames(head(tpmTrRat[with(tpmTrRat, order(-LowGlu)),,], n = 200))
+write(low_TranslRat, file = "most_Transl_LowGlu.txt")
+high_TranslRat <- rownames(head(tpmTrRat[with(tpmTrRat, order(-HighGlu)),,], n = 200))
+write(high_TranslRat, file = "most_Transl_HighGlu.txt")
 
 # Compare all the most differential translated, the most efficiently tranlated in high and most efficiently tranlated in low genes.
-translEffiency <- list(TranslDiff = diffTransl_genes, TranslEff_Hi = effTransl_High, TranslEff_Low = effTransl_Low)
-plot(euler(translEffiency, shape = "ellipse"), quantities = TRUE)
+translRatios <- list(TranslDiff = diffTransl_genes, TranslRatio_Hi = high_TranslRat, TranslRatio_Low = low_TranslRat)
+plot(euler(translRatios, shape = "ellipse"), quantities = TRUE)
+
+# Generate the venn object.
+vG <- construct(translRatios)
+
+# Read the features for the translation ratio genes.
+featuresTransl <- read.table("trans_ratio/transl_Ratios_geneNames.tab", header = TRUE, sep = ";")
+
+# Create a slice with only the numeric values of the data frame.
+featTransl <- featuresTransl[,c(1:14)]
+
+# Add the clustering column
+featTransl["Cluster"] <- NaN
+
+for (i in 1:nrow(featTransl)) {
+  if (featTransl[i, "ensembl_gene_id"] %in% overlap(vG)) {
+    featTransl[i, "Cluster"] = "All"
+  }
+  else if (featTransl[i, "ensembl_gene_id"] %in% overlap(vG, c("TranslDiff", "TranslRatio_Hi"))) {
+    featTransl[i, "Cluster"] = "HiANDDiff"
+  }
+  else if (featTransl[i, "ensembl_gene_id"] %in% overlap(vG, c("TranslRatio_Low", "TranslRatio_Hi"))) {
+    featTransl[i, "Cluster"] = "LowANDHigh"
+  }
+  else if (featTransl[i, "ensembl_gene_id"] %in% high_TranslRat) {
+    featTransl[i, "Cluster"] = "Hi_Glu"
+  }
+  else if (featTransl[i, "ensembl_gene_id"] %in% low_TranslRat) {
+    featTransl[i, "Cluster"] = "Low_Glu"
+  }
+  else if (featTransl[i, "ensembl_gene_id"] %in% diffTransl_genes) {
+    featTransl[i, "Cluster"] = "Transl_Diff"
+  }
+}
+
+# Make the plots.
+# Plot the Coding length boxplots
+ggplot(featTransl, aes(x = Cluster, y = coding_len, fill = Cluster, group = Cluster)) +
+  #coord_cartesian(ylim = c(0, 7000)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = Cluster), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill") +
+  theme(legend.position = "topleft") +
+  scale_x_discrete(labels = c("All", "Hi Gluc", "Diff + High", "Low Gluc", "Low + High", "Transl Diff")) +
+  ylab("Coding Length") +
+  xlab("Transl. Groups") +
+  ggtitle("Coding length distribution of the 6 Transl. Ratio groups") +
+  theme_bw()
+
+# Plot GC content boxplots
+ggplot(featTransl, aes(x = Cluster, y = GC, fill = Cluster, group = Cluster)) +
+  coord_cartesian(ylim = c(30, 80)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = Cluster), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "jitter") +
+  theme(legend.position = "topleft") +
+  scale_x_discrete(labels = c("All", "Hi Gluc", "Diff + High", "Low Gluc", "Low + High", "Transl Diff")) +
+  ylab("GC") +
+  xlab("Transl. Groups") +
+  ggtitle("GC content distribution of the 6 Transl. Ratio groups") +
+  theme_bw()
+
+# Plot 5'UTR length boxplots
+ggplot(featTransl, aes(x = Cluster, y = X5pUTR_len, fill = Cluster, group = Cluster)) +
+  #coord_cartesian(ylim = c(30, 80)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = Cluster), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "jitter") +
+  theme(legend.position = "topleft") +
+  scale_x_discrete(labels = c("All", "Hi Gluc", "Diff + High", "Low Gluc", "Low + High", "Transl Diff")) +
+  ylab("5'UTR lengths") +
+  xlab("Transl. Groups") +
+  ggtitle("5'UTR length distribution of the 6 Transl. Ratio groups") +
+  theme_bw()
+
+# Plot 5'UTR MFE boxplots
+ggplot(featTransl, aes(x = Cluster, y = X5pUTR_MFE, fill = Cluster, group = Cluster)) +
+  #coord_cartesian(ylim = c(30, 80)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = Cluster), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "jitter") +
+  theme(legend.position = "topleft") +
+  scale_x_discrete(labels = c("All", "Hi Gluc", "Diff + High", "Low Gluc", "Low + High", "Transl Diff")) +
+  ylab("5'UTR MFE") +
+  xlab("Transl. Groups") +
+  ggtitle("5'UTR MFE distribution of the 6 Transl. Ratio groups") +
+  theme_bw()
+
+# Plot 5'UTR MFE boxplots
+ggplot(featTransl, aes(x = Cluster, y = X5pUTR_MfeBP, fill = Cluster, group = Cluster)) +
+  coord_cartesian(ylim = c(0.01, -0.7)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = Cluster), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "stack") +
+  theme(legend.position = "topleft") +
+  scale_x_discrete(labels = c("All", "Hi Gluc", "Diff + High", "Low Gluc", "Low + High", "Transl Diff")) +
+  ylab("5'UTR MFE/BP") +
+  xlab("Transl. Groups") +
+  ggtitle("5'UTR MFE/BP distribution of the 6 Transl. Ratio groups") +
+  theme_bw()
+
+# Plot 3'UTR length boxplots
+ggplot(featTransl, aes(x = Cluster, y = X3pUTR_len, fill = Cluster, group = Cluster)) +
+  coord_cartesian(ylim = c(0, 10000)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = Cluster), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill") +
+  theme(legend.position = "topleft") +
+  scale_x_discrete(labels = c("All", "Hi Gluc", "Diff + High", "Low Gluc", "Low + High", "Transl Diff")) +
+  ylab("3'UTR length") +
+  xlab("Transl. Groups") +
+  ggtitle("3'UTR length distribution of the 6 Transl. Ratio groups") +
+  theme_bw()
+
+# Plot 3'UTR GC boxplots
+ggplot(featTransl, aes(x = Cluster, y = X3pUTR_GC, fill = Cluster, group = Cluster)) +
+  #coord_cartesian(ylim = c(30, 80)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = Cluster), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "jitter") +
+  theme(legend.position = "topleft") +
+  scale_x_discrete(labels = c("All", "Hi Gluc", "Diff + High", "Low Gluc", "Low + High", "Transl Diff")) +
+  ylab("3'UTR GC") +
+  xlab("Transl. Groups") +
+  ggtitle("3'UTR GC distribution of the 6 Transl. Ratio Groups") +
+  theme_bw()
+
+# Plot 3'UTR MFE boxplots
+ggplot(featTransl, aes(x = Cluster, y = X3pUTR_MFE, fill = Cluster, group = Cluster)) +
+  coord_cartesian(ylim = c(0, -2500)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = Cluster), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "jitter") +
+  theme(legend.position = "topleft") +
+  scale_x_discrete(labels = c("All", "Hi Gluc", "Diff + High", "Low Gluc", "Low + High", "Transl Diff")) +
+  ylab("3'UTR MFE") +
+  xlab("Transl. Groups") +
+  ggtitle("3'UTR MFE distribution of the 6 Transl. Ratio Groups") +
+  theme_bw()
+
+# Plot 3'UTR MFE/BP boxplots
+ggplot(featTransl, aes(x = Cluster, y = X3pUTR_MfeBP, fill = Cluster, group = Cluster)) +
+  coord_cartesian(ylim = c(0, -0.6)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = Cluster), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "stack") +
+  theme(legend.position = "topleft") +
+  scale_x_discrete(labels = c("All", "Hi Gluc", "Diff + High", "Low Gluc", "Low + High", "Transl Diff")) +
+  ylab("3'UTR MFE/BP") +
+  xlab("Transl. Groups") +
+  ggtitle("3'UTR MFE/BP distribution of the 6 Transl. Ratio Groups") +
+  theme_bw()
+
+# Plot TOP local score boxplots
+ggplot(featTransl, aes(x = Cluster, y = TOP_localScore, fill = Cluster, group = Cluster)) +
+  #coord_cartesian(ylim = c(0, -0.6)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = Cluster), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "dodge") +
+    theme(legend.position = "topleft") +
+  scale_x_discrete(labels = c("All", "Hi Gluc", "Diff + High", "Low Gluc", "Low + High", "Transl Diff")) +
+  ylab("TOP local score") +
+  xlab("Transl. Groups") +
+  ggtitle("TOP local score distribution of the 6 Transl. Ratio Groups") +
+  theme_bw()
+
+# Plot CAI boxplots
+ggplot(featTransl, aes(x = Cluster, y = CAI, fill = Cluster, group = Cluster)) +
+  #coord_cartesian(ylim = c(0, -0.6)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = Cluster), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "dodge") +
+  theme(legend.position = "topleft") +
+  scale_x_discrete(labels = c("All", "Hi Gluc", "Diff + High", "Low Gluc", "Low + High", "Transl Diff")) +
+  ylab("CAI") +
+  xlab("Transl. Groups") +
+  ggtitle("CAI distribution of the 6 Transl. Ratio Groups") +
+  theme_bw()
+
+
 
 
 

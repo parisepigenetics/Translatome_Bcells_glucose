@@ -55,12 +55,12 @@ geneBoxplotCond <- function(matrix, name, experiments, treatments, jit_width = 0
 
 
 lowExpression_filter <- function(e, groups, thres = 3, samples = 1, coefVar = 0.5, ...){
-  # Function to filter for lowly expressed genes.
+  # Function to filter lowly expressed genes.
   # e      : raw counts data.frame (or cpm, or tpm matrix).
-  # groups : factor designating the grouping(s) (conditions, treatments etc.) it MUSt be of equal length to the columns of e and its levels must be the different groups.
+  # groups : factor designating the grouping(s) (conditions, treatments etc.) it MUSt be of equal length to the columns of e and its levels must represent the different groups (conditions).
   # thres  : the threshold of the *mean* between groups.
-  # samples: the minimum number of sample groups that we want threshold 'thres' to be higher.
-  # coefVar: The coefficient of variation threshold used to remove "noisy" genes between replicates.
+  # samples: the minimum number of groups (i.e. conditions) that we want the mean to be higher than the threshold 'thres'.
+  # coefVar: The coefficient of variation threshold, within replicates, used to remove "noisy" measured genes.
   filteredDF <- data.frame()
   rows <- vector()
   for (i in 1:nrow(e)) {
@@ -69,7 +69,8 @@ lowExpression_filter <- function(e, groups, thres = 3, samples = 1, coefVar = 0.
     sds <- aggregate(row~groups, FUN = sd)$row
     cvs <- sds/means
     lg <- length(levels(groups))
-    if ( (sum(cvs <= coefVar) == lg) & (sum(means >= thres) >= samples) ) { # The first part of this condition checks for the coefficient of variability in ALL groups by grouping sums in the number of samples and the second part is checking for the experiment threshold we specifie.
+    # This condition filters for "noisy" genes and for lowly expressed genes.
+    if ( (sum(cvs <= coefVar) == lg) & (sum(means >= thres) >= samples) ) { # The first part of this condition checks for the coefficient of variability in ALL groups by grouping sums in the number of samples and the second part is checking for the experiment threshold we specify.
       filteredDF <- rbind(filteredDF, row)
       rows <- append(rows, rownames(e)[i])
     }
@@ -135,3 +136,8 @@ plot_unSupervised_clust <- function(data, method, scale = FALSE, title = "", ...
   invisible(list(res = clustRes, df = dfcall))
 }
 
+
+# Low lwvwel function to put the counts on a boxplot.
+n_fun <- function(x){
+  return(data.frame(y = max(x), label = length(x)))
+}
