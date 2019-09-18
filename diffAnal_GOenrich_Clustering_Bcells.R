@@ -648,6 +648,7 @@ tpmTrRat <- data.frame("HighGlu" = (tpmTrEffRat$LightH + tpmTrEffRat$HeavyH)/2, 
 rownames(tpmTrRat) <- rownames(tpmTrRatAll)
 tpmTrRat.m <- reshape2::melt(as.matrix(tpmTrRat), id.vars = NULL)
 colnames(tpmTrRat.m) <- c("GeneID", "Treatment", "TranslRat")
+
 # Have a look of the different translation efficiencies in low anf high.
 ggplot(tpmTrRat.m, aes(x = Treatment, y = TranslRat)) + geom_violin(aes(fill = Treatment), draw_quantiles = c(0.25, 0.5, 0.75), alpha = 0.6, trim = TRUE) +  geom_boxplot(width = 0.2, outlier.alpha = 0.2, notch = TRUE) + theme_minimal() + labs(x = "Experiment", y = "Transl. Ratio") + ylim(0, 10)
 
@@ -657,7 +658,7 @@ write(low_TranslRat, file = "most_Transl_LowGlu.txt")
 high_TranslRat <- rownames(head(tpmTrRat[with(tpmTrRat, order(-HighGlu)),,], n = 200))
 write(high_TranslRat, file = "most_Transl_HighGlu.txt")
 
-# Compare all the most differential translated, the most efficiently tranlated in high and most efficiently tranlated in low genes.
+# Compare a ll the most differential translated, the most efficiently tranlated in high and most efficiently tranlated in low genes.
 translRatios <- list(TranslDiff = diffTransl_genes, TranslRatio_Hi = high_TranslRat, TranslRatio_Low = low_TranslRat)
 plot(euler(translRatios, shape = "ellipse"), quantities = TRUE)
 
@@ -836,6 +837,215 @@ ggplot(featTransl, aes(x = Cluster, y = CAI, fill = Cluster, group = Cluster)) +
   ylab("CAI") +
   xlab("Transl. Groups") +
   ggtitle("CAI distribution of the 6 Transl. Ratio Groups") +
+  theme_bw()
+
+
+## Analysis of Translation differences ---------
+
+# Apply a more stringent filter to avoid the lowly translated genes.
+# re-read the data
+ddT <- read.table("data/polysomeProfile_TPM_proteinCoding.csv", header = TRUE, sep = ";")
+# We do not calculate the monosomes fraction.
+ddT <- ddT[,7:24]
+# Generate the grouping factors
+groupsFactor_Trasnl <- factor(c("LightH", "LightH", "LightH", "LightL", "LightL", "LightL",
+                                "HeavyH", "HeavyH", "HeavyH", "HeavyL", "HeavyL", "HeavyL",
+                                "TotalH", "TotalH", "TotalH", "TotalL", "TotalL", "TotalL"),
+                                levels = c("LightH", "LightL", "HeavyH", "HeavyL", "TotalH", "TotalL"));
+
+# Strict filter. All samples MUST have at least 5 average TPM.
+ddF <- lowExpression_filter(ddT, groupsFactor_Trasnl, thres = 5, samples = 6)
+
+lightHavgT <- rowMeans(ddF[,1:3])
+lightLavgT <- rowMeans(ddF[,4:6])
+heavyHavgT <- rowMeans(ddF[,7:9])
+heavyLavgT <- rowMeans(ddF[,10:12])
+totalHavgT <- rowMeans(ddF[,13:15])
+totalLavgT <- rowMeans(ddF[,16:18])
+tpmAvgAllF <- data.frame("LightL" = lightLavgT, "LightH" = lightHavgT, "HeavyL" = heavyLavgT, "HeavyH" = heavyHavgT, "TotalL" = totalLavgT, "TotalH" = totalHavgT)
+tpmTrRatAllF <- data.frame("LightL" = lightLavgT/totalLavgT, "LightH" = lightHavgT/totalHavgT, "HeavyL" = heavyLavgT/totalLavgT, "HeavyH" = heavyHavgT/totalHavgT)
+
+# Generate the Translation Ratio Data frame.
+tpmTrRatF <- data.frame("HighGlu" = (tpmTrRatAllF$LightH + tpmTrRatAllF$HeavyH)/2, "LowGlu" = (tpmTrRatAllF$LightL + tpmTrRatAllF$HeavyL)/2, row.names = rownames(tpmTrRatAllF))
+
+# Calculate the FC difference of translation ratio (normalised).
+diffTranslRatioFC <- data.frame(transRatioFC = (tpmTrRatF$HighGlu - tpmTrRatF$LowGlu)/tpmTrRatF$LowGlu, row.names = rownames(tpmTrRatF))
+diffTranslRatioFC_sorted <- diffTranslRatioFC[order(diffTranslRatioFC$transRatioFC, decreasing = TRUE), , drop = FALSE]
+
+# Select the most (UP), the least (DOWN) and the non changing genes (Control).
+diffTranslRatioFC_up <- rownames(diffTranslRatioFC_sorted[diffTranslRatioFC_sorted$transRatioFC >= 0.5, , drop = FALSE]) # 147
+diffTranslRatioFC_down <- rownames(diffTranslRatioFC_sorted[diffTranslRatioFC_sorted$transRatioFC <= -0.25, , drop = FALSE]) # 154
+diffTranslRatioFC_control <- rownames(diffTranslRatioFC_sorted[diffTranslRatioFC_sorted$transRatioFC >= -0.01 & diffTranslRatioFC_sorted$transRatioFC <= 0.01, , drop = FALSE]) # 326
+
+# Keep all thse together in a file so that we will calculate the features.
+write(c(diffTranslRatioFC_down, diffTranslRatioFC_up, diffTranslRatioFC_control), file = "diffTranslRatioFC_ALL.txt")
+
+## calculate rna features with the rna_feat_ext suit. (627 genes were retrieved from 627) (the previous analysis with looser expression filter has retrieved 617 out of 717 genes)
+
+# Load the features table.
+featTranslRatioFC <- read.table("trans_ratio/diffTranslRatioFC_ALL.tab", sep = ";", header = TRUE)
+# Keep only the numerical values.
+featTranslRatioFC <- featTranslRatioFC[,1:14] # The first 14 columns contain the numerical values.
+
+# Add the column for the translation ratio different. UP, Down, Control.
+featTranslRatioFC["diffTranslRat"] <- NaN
+
+for (i in 1:nrow(featTranslRatioFC)) {
+  if (featTranslRatioFC[i, "ensembl_gene_id"] %in% diffTranslRatioFC_up) {
+    featTranslRatioFC[i, "diffTranslRat"] = "UP"
+  }
+  else if (featTranslRatioFC[i, "ensembl_gene_id"] %in% diffTranslRatioFC_down) {
+    featTranslRatioFC[i, "diffTranslRat"] = "DOWN"
+  }
+  else if (featTranslRatioFC[i, "ensembl_gene_id"] %in% diffTranslRatioFC_control) {
+    featTranslRatioFC[i, "diffTranslRat"] = "Control"
+  }
+}
+
+
+# Make the plots.
+# Plot the Coding length boxplots
+ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = coding_len, fill = diffTranslRat, group = diffTranslRat)) +
+  coord_cartesian(ylim = c(0, 5000)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = diffTranslRat), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill") +
+  theme(legend.position = "topleft") +
+  ylab("Coding Length") +
+  xlab("Transl. Groups") +
+  ggtitle("Coding length distribution of the 3 transl. difference genes sets") +
+  theme_bw()
+
+# Plot GC content boxplots
+ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = GC, fill = diffTranslRat, group = diffTranslRat)) +
+  coord_cartesian(ylim = c(30, 75)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = diffTranslRat), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "jitter") +
+  theme(legend.position = "topleft") +
+  ylab("GC") +
+  xlab("Transl. Groups") +
+  ggtitle("GC content distribution of the 3 transl. difference genes sets") +
+  theme_bw()
+
+# Plot 5'UTR length boxplots
+ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = X5pUTR_len, fill = diffTranslRat, group = diffTranslRat)) +
+  coord_cartesian(ylim = c(0, 1000)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = diffTranslRat), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "jitter") +
+  theme(legend.position = "topleft") +
+  ylab("5'UTR lengths") +
+  xlab("Transl. Groups") +
+  ggtitle("5'UTR length distribution of the 3 transl. difference genes sets") +
+  theme_bw()
+
+# Plot 5'UTR GC boxplots
+ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = X5pUTR_GC, fill = diffTranslRat, group = diffTranslRat)) +
+  #coord_cartesian(ylim = c(0, 1000)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = diffTranslRat), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "jitter") +
+  theme(legend.position = "topleft") +
+  ylab("5'UTR GC") +
+  xlab("Transl. Groups") +
+  ggtitle("5'UTR GC content distribution of the 3 transl. difference genes sets") +
+  theme_bw()
+
+# Plot 5'UTR MFE boxplots
+ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = X5pUTR_MFE, fill = diffTranslRat, group = diffTranslRat)) +
+  #coord_cartesian(ylim = c(30, 80)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = diffTranslRat), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "jitter") +
+  theme(legend.position = "topleft") +
+  ylab("5'UTR MFE") +
+  xlab("Transl. Groups") +
+  ggtitle("5'UTR MFE distribution of the 3 transl. difference genes sets") +
+  theme_bw()
+
+# Plot 5'UTR MFE per BP boxplots
+ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = X5pUTR_MfeBP, fill = diffTranslRat, group = diffTranslRat)) +
+  coord_cartesian(ylim = c(0.01, -0.7)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = diffTranslRat), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "stack") +
+  theme(legend.position = "topleft") +
+  ylab("5'UTR MFE/BP") +
+  xlab("Transl. Groups") +
+  ggtitle("5'UTR MFE/BP distribution of the 3 transl. difference genes sets") +
+  theme_bw()
+
+# Plot 3'UTR length boxplots
+ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = X3pUTR_len, fill = diffTranslRat, group = diffTranslRat)) +
+  coord_cartesian(ylim = c(0, 5000)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = diffTranslRat), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill") +
+  theme(legend.position = "topleft") +
+  ylab("3'UTR length") +
+  xlab("Transl. Groups") +
+  ggtitle("3'UTR length distribution of the 3 transl. difference genes sets") +
+  theme_bw()
+
+# Plot 3'UTR GC boxplots
+ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = X3pUTR_GC, fill = diffTranslRat, group = diffTranslRat)) +
+  #coord_cartesian(ylim = c(30, 80)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = diffTranslRat), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "jitter") +
+  theme(legend.position = "topleft") +
+  ylab("3'UTR GC") +
+  xlab("Transl. Groups") +
+  ggtitle("3'UTR GC distribution of the 3 transl. difference genes sets") +
+  theme_bw()
+
+# Plot 3'UTR MFE boxplots
+ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = X3pUTR_MFE, fill = diffTranslRat, group = diffTranslRat)) +
+  coord_cartesian(ylim = c(0, -2500)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = diffTranslRat), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "jitter") +
+  theme(legend.position = "topleft") +
+  ylab("3'UTR MFE") +
+  xlab("Transl. Groups") +
+  ggtitle("3'UTR MFE distribution of the 3 transl. difference genes sets") +
+  theme_bw()
+
+# Plot 3'UTR MFE/BP boxplots
+ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = X3pUTR_MfeBP, fill = diffTranslRat, group = diffTranslRat)) +
+  coord_cartesian(ylim = c(0, -0.5)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = diffTranslRat), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "stack") +
+  theme(legend.position = "topleft") +
+  ylab("3'UTR MFE/BP") +
+  xlab("Transl. Groups") +
+  ggtitle("3'UTR MFE/BP distribution of the 3 transl. difference genes sets") +
+  theme_bw()
+
+# Plot TOP local score boxplots
+ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = TOP_localScore, fill = diffTranslRat, group = diffTranslRat)) +
+  #coord_cartesian(ylim = c(0, -0.6)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = diffTranslRat), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "dodge") +
+  theme(legend.position = "topleft") +
+  ylab("TOP local score") +
+  xlab("Transl. Groups") +
+  ggtitle("TOP local score distribution of the 3 transl. difference genes sets") +
+  theme_bw()
+
+# Plot CAI boxplots
+ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = CAI, fill = diffTranslRat, group = diffTranslRat)) +
+  #coord_cartesian(ylim = c(0, -0.6)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(aes(col = diffTranslRat), position = position_jitter(width = .2, height = 0)) +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "dodge") +
+  theme(legend.position = "topleft") +
+  ylab("CAI") +
+  xlab("Transl. Groups") +
+  ggtitle("CAI distribution of the 3 transl. difference genes sets") +
   theme_bw()
 
 
