@@ -1,4 +1,4 @@
-## Load packages ----------------------
+## Load packages ------------------------------------------
 library(tidyverse)
 library(ggplot2)
 library(ggpubr)
@@ -26,12 +26,13 @@ library(Factoshiny)
 library(pheatmap)
 library(eulerr)
 
+
 ## Functions ----------------------------------------------
 # Source functions from the .r file.
-source("diffAnal_GOenrich_Clustering_Bcells_FunctionSource.r")
+source("/home/costas/devel/diderot/diffAnalysis_GOenrich_Clustering_Bcells/diffAnal_GOenrich_Clustering_Bcells_FunctionSource.r")
 
 
-## Preprpocess data DE -------------
+## Preprpocess data DE ------------------------------------
 # Load the counts table.
 countsTableRaw <- read.table("data/countsTOTALS_CodingGenes.tsv", header = TRUE, sep = "\t")
 
@@ -45,14 +46,10 @@ countsTableRawL <- countsTableRaw[,13:18]
 countsTableRawH <- countsTableRaw[,19:24]
 
 # Form the proper factors for naming.
-groupsformatrix_M <- factor(c("MonoH", "MonoH", "MonoH", "MonoL", "MonoL", "MonoL"),
-                            levels = c("MonoH", "MonoL"))
-groupsformatrix_L <- factor(c("LightH", "LightH", "LightH", "LightL", "LightL", "LightL"),
-                            levels = c("LightH", "LightL"))
-groupsformatrix_H <- factor(c("HeavyH", "HeavyH", "HeavyH", "HeavyL", "HeavyL", "HeavyL"),
-                            levels = c("HeavyH", "HeavyL"))
-groupsformatrix_T <- factor(c("TotalH", "TotalH", "TotalH", "TotalL", "TotalL", "TotalL"),
-                            levels = c("TotalH", "TotalL"))
+groupsformatrix_M <- factor(c("MonoH", "MonoH", "MonoH", "MonoL", "MonoL", "MonoL"), levels = c("MonoH", "MonoL"))
+groupsformatrix_L <- factor(c("LightH", "LightH", "LightH", "LightL", "LightL", "LightL"), levels = c("LightH", "LightL"))
+groupsformatrix_H <- factor(c("HeavyH", "HeavyH", "HeavyH", "HeavyL", "HeavyL", "HeavyL"), levels = c("HeavyH", "HeavyL"))
+groupsformatrix_T <- factor(c("TotalH", "TotalH", "TotalH", "TotalL", "TotalL", "TotalL"), levels = c("TotalH", "TotalL"))
 
 groupsall <- factor(c("Mono", "Mono", "Mono", "Mono", "Mono", "Mono",
                       "Light", "Light", "Light", "Light", "Light", "Light",
@@ -93,7 +90,7 @@ countsTableAll <- countsTableRaw[cpm_Filt_names,]
 cpmAll_Filt <- cpmall[cpm_Filt_names, ]
 
 
-### Quality Control Plots ------------------------------
+### Quality Control Plots ---------------------------------
 ## PCA on counts.
 res.pca.Counts = PCA(t(countsTableAll), graph = FALSE)
 fviz_pca_ind(res.pca.Counts,
@@ -113,7 +110,6 @@ fviz_pca_ind(res.pca.CPMs,
              addEllipses = TRUE, # Ellipses de concentration
              legend.title = "Groups",
              title = "PCA on the Polysome profile CPMs table.")
-
 
 
 ## Differential Expression analysis -----------------------
@@ -148,7 +144,7 @@ contr.matrix_T <- makeContrasts(
   levels = colnames(designMat_T))
 
 
-### DiffExp Monosomes -------------------------------
+### DiffExp Monosomes -------------------------------------
 vmM <- voom(countsTable_M, designMat_M, plot = TRUE)
 fitM <- lmFit(vmM, designMat_M)
 vfitM <- contrasts.fit(fitM, contrasts = contr.matrix_M)
@@ -193,21 +189,26 @@ summary(ttH)
 plotMD(efitH, column = 1, status = efH[,1], main = colnames(efitH)[1],ylim = c( -1.5, 1.5))
 
 
-### DiffExp Total RNA -------------------------------
+### DiffExp Total RNA -------------------------------------
 vmT <- voom(countsTable_T, designMat_T, plot = TRUE)
 fitT <- lmFit(vmT, designMat_T)
 vfitT <- contrasts.fit(fitT, contrasts = contr.matrix_T)
 efitT <- eBayes(vfitT, robust = TRUE) # Playing with the parameters of ebayes makes no difference.
-efT <- decideTests(efitT,p.value = 0.05, lfc = 0.5)
+efT <- decideTests(efitT, p.value = 0.05, lfc = 0.5)
 summary(efT)
+efitTtab <- topTable(efitT, p.value = 0.05, lfc = 0.5, number = "ALL")
+efitTtab$GeneName <- as.vector(mapIds(org.Hs.eg.db, keys = rownames(efitTtab), column = "SYMBOL", keytype = "ENSEMBL", multiVals = "first"))
+write.table(efitTtab, file = "degs_RNAtotal_201911.tab", quote = FALSE, sep = "\t")
+
 plotSA(efitT, main = "SA plot for RNA total L/H")
-tfitT <- treat(vfitT, lfc = log2(1.15))
-ttT <- decideTests(tfitT)
+tfitT <- treat(vfitT, lfc = log2(1.1))
+ttT <- decideTests(tfitT, p.value = 0.05)
 summary(ttT)
+plotMD(efitT, column = 1, status = efT[,1], main = colnames(efitT)[1], ylim = c( -1.5, 1.5))
+plotMD(tfitT, column = 1, status = ttT[,1], main = colnames(tfitT)[1], ylim = c( -1.5, 1.5))
 
-plotMD(efitT, column = 1, status = efT[,1], main = colnames(efitT)[1],ylim = c( -1.5, 1.5))
 
-### Toptables ------------
+### Toptables ---------------------------------------------
 DEH <- topTable(efitH, coef = 1, p.value = 0.05, lfc = 0.5, number = Inf)
 DEL <- topTable(efitL, coef = 1, p.value = 0.05, lfc = 0.5, number = Inf)
 DEM <- topTable(efitM, coef = 1, p.value = 0.05, lfc = 0.5, number = Inf)
@@ -216,7 +217,8 @@ DET <- topTable(efitT, coef = 1, p.value = 0.05, lfc = 0.5, number = Inf)
 degs <- union(rownames(DEL), rownames(DEH))
 write(degs, "degs_02052019_geneNames.txt")
 
-### Venn diagrams -----------
+
+### Venn diagrams -----------------------------------------
 # Intersection between Light, Heavy, Total
 vennALL <- venn.diagram(list(Heavy = rownames(DEH), Light = rownames(DEL), Total = rownames(DET)), NULL, fill = c("darkorange1", "deepskyblue3", "darkolivegreen4"), alpha = c(0.5, 0.5, 0.5), cex = 3)
 
@@ -226,7 +228,7 @@ fit_Venn <- euler(c("Heavy_P" = 183, "Light_P" = 164, "Total" = 12, "Heavy_P&Lig
 plot(fit_Venn,quantities = TRUE, labels = list(font = 4), fills = c("dodgerblue4", "darkgoldenrod1", "cornsilk4"))
 
 
-#### Preprocess Translation data -------------------------
+#### Preprocess Translation data --------------------------
 tpmPPglu <- read.table("data/polysomeProfile_TPM_proteinCoding.csv", header = TRUE, sep = ";")
 
 row_NON_zero <- apply(tpmPPglu, 1, function(row) all(row != 0))
@@ -265,9 +267,7 @@ logRatiosDEG <- data.frame("Mono" = ratioMdeg, "Light" = ratioLdeg, "Heavy" = ra
 logRatiosALL <- data.frame("Mono" = ratioMall, "Light" = ratioLall, "Heavy" = ratioHall,  row.names = rownames(tpmPPgluClean))
 
 
-
-## Enrichments ------------------------------------------
-
+## Enrichments --------------------------------------------
 # Generate the gene list.
 geneListENS <- logRatiosDEG[["Heavy"]]
 names(geneListENS) <- degs
@@ -306,7 +306,7 @@ esigsDEGs <- GSEA(geneListSYMB, minGSSize = 20, TERM2GENE = m_df)
 dotplot(esigsDEGs, showCategory = 50, title = "DotPlot MsiGDB DEGS GSEA")
 
 
-### GO enrichments ------------
+### GO enrichments ----------------------------------------
 # GO group enrichment
 ggoDEGs_MF2 <- groupGO(gene = genesENS, OrgDb = org.Hs.eg.db, ont = "MF", level = 2, keyType = "ENSEMBL", readable = TRUE)
 barplot(ggoDEGs_MF2, showCategory = 30,  title = "GroupGO DEGs MF_2")
@@ -355,8 +355,7 @@ dotplot(ekePDEGs, showCategory = 20, title = "DEGs REACTOME Pathways enrichment"
 
 
 ### Enrichment Visualisation ------------------------------
-
-## Category Network (CNET) plots (perhaps the most usefull!)
+# Category Network (CNET) plots (perhaps the most usefull!)
 cnetplot(egoDEGs_MF, foldChange = geneListENS, colorEdge = TRUE, showCategory = 10) + ggtitle("CNETplot GOenrich DEGs MF")
 cnetplot(egoDEGs_BP, foldChange = geneListENS, colorEdge = TRUE, showCategory = 10) + ggtitle("CNETplot GOenrich DEGs BP")
 cnetplot(egoDEGs_ALL, foldChange = geneListENS, colorEdge = TRUE, showCategory = 10) + ggtitle("CNETplot GOenrich DEGs ALL")
@@ -366,9 +365,6 @@ cnetplot(egogsDEGs_BP, foldChange = geneListSYMB, colorEdge = TRUE, showCategory
 cnetplot(egogsDEGs_ALL, foldChange = geneListSYMB, colorEdge = TRUE, showCategory = 10) + ggtitle("CNETplot GOgsea DEGs ALL")
 
 cnetplot(ekePDEGs, foldChange = geneListSYMB, colorEdge = TRUE, symbol = "ENSEMBL") + ggtitle("CNETplot GOgsea DEGs ALL")
-
-
-
 
 
 #### Clustering -------------------------------------------
@@ -392,7 +388,6 @@ heatmap.2(as.matrix(logRatiosDEG), main = "DEGs logRatio H/L HClust Ward",  dend
 heatmap.2(as.matrix(logRatiosDEG), main = "DEGs logRatio H/L HClust Single",  dendrogram = "row", Colv = FALSE, col = my_palette, cexCol = 1.5, cexRow = 0.5, key.title = NA, keysize = 0.8, key.xlab = NA, ylab = "Genes", hclustfun = function(x) hclust(x, method = "single"))
 
 heatmap.2(as.matrix(logRatiosDEG), main = "DEGs logRatio H/L HClust Complete",  dendrogram = "row", Colv = FALSE, col = my_palette, cexCol = 1.5, cexRow = 0.5, key.title = NA, keysize = 0.8, key.xlab = NA, ylab = "Genes", hclustfun = function(x) hclust(x, method = "complete"))
-
 
 ## Visualise results from different clustering algorithms.
 # Hierarchical clustering
@@ -422,8 +417,7 @@ clustRes <- (plot_unSupervised_clust(logRatiosDEG, "Mclust"))
 # TODO 3D interactive plot of the MClust result.
 
 
-
-## RNA Features analysis --------
+## RNA Features analysis ----------------------------------
 # Prepare the features data frame.
 clusterGeneIDs <- clustRes$df["cluster"]
 featuresDF <- read.table("rnaFeat/201905/degs_02052019_ENSEMBL.tab", header = TRUE, sep = "\t")
@@ -1071,9 +1065,7 @@ ggbetweenstats( # Group translation
   ggplot2::scale_color_manual(values =  c("#D55E00", "#0072B2", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
 
 
-
-## Translation Ratio analyses --------------------
-
+## Translation Ratio analyses -----------------------------
 # Prepare the datasets.
 dd <- read.table("data/polysomeProfile_TPM_proteinCoding.csv", header = TRUE, sep = ";")
 rs <- apply(dd, 1, function(row) all(row != 0))
@@ -1314,8 +1306,7 @@ ggplot(featTransl, aes(x = Cluster, y = CAI, fill = Cluster, group = Cluster)) +
   theme_bw()
 
 
-## Analysis of Translation differences ---------
-
+## Analysis of Translation differences --------------------
 # Apply a more stringent filter to avoid the lowly translated genes.
 # re-read the data
 ddT <- read.table("data/polysomeProfile_TPM_proteinCoding.csv", header = TRUE, sep = ";")
@@ -1375,7 +1366,6 @@ for (i in 1:nrow(featTranslRatioFC)) {
     featTranslRatioFC[i, "diffTranslRat"] = "Control"
   }
 }
-
 
 # Make the plots.
 # Plot the Coding length boxplots
@@ -1759,8 +1749,7 @@ ggbetweenstats(
   ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
 
 
-
-## UTRDB analysis ---------------------
+## UTRDB analysis -----------------------------------------
 # Read the table from the UTRDB website analysis (the data file is preproccessed!!!!)
 utr_5_table <- read.table("rnaFeat/utrScan_5utr_results.txt", sep = ":", header = TRUE)
 utr_3_table <- read.table("rnaFeat/utrScan_3utr_results.txt", sep = ":", header = TRUE)
