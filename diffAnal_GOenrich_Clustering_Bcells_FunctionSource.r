@@ -1,7 +1,7 @@
 # Source file with usefull finctions for the diffAnal_EnrichAnal_ClustAnal of the Beta-cells polysome profile.
 # cbouyio, May 2019, UMR 7216
 
-# Functions -------------------------------------------------------------------
+# Processing functions ----------------
 
 discretise <- function(x, t) {
   # Low level function to return a 3 level discretisation.
@@ -33,28 +33,61 @@ discretiseMatrix <- function(df, ...){
 }
 
 
-plotMatrixBoxplot <- function(df, ...) {
-  # Function that plots a violin - jitter plot of a numeric matrix.
-  dff <- df %>% rownames_to_column(var = "GeneID") %>% gather(Experiment, LogFC, -GeneID, factor_key = TRUE)
-  p <- ggplot(dff, aes(x = Experiment, y = LogFC, color = Experiment)) + geom_violin(trim = FALSE) + geom_jitter(aes(alpha = 0.5), position = position_jitter(0.25)) + stat_summary(fun.data=mean_sdl, geom = "pointrange", color = "dimgrey", size = 1) + stat_summary(fun.y = median, geom = "point", shape = 95, size = 10, color="black") + scale_color_brewer(palette = "Dark2") + theme_linedraw()
-  return(p)
+# Filtering functions -----------------
+
+filter_low_counts <- function(gem, exps, g = 1, t = 5, ...){
+  # Function to filter out lowly expressed (i.e. counts) genes.
+  # gem: Gene Expression Matrix. A data frame with the conditions as columns and the gene expression profiles as rows.
+  # exps: Experiments. A factor specifying the grouping of experiments. MUST have lenght of the colnames of gem and MUST specify the different levels (i.e. treatments) of the data.
+  # g: Groups. The number of groups which we ask to have more that the threshold reads.
+  # t: Counts threshold. A threshold of counts that all the replicates in the specified number of groups must be above.
+  fDF <- data.frame()
+  rows <- vector()
+  for (i in 1:nrow(gem)) {
+    row <- as.numeric(gem[i,])
+    # Calculate how many times you get more counts than the threshold in each experiment.
+    agT <- rowSums(aggregate(row~exps, FUN = function(v){return(v >= t)})$row)
+    # THIS is the number of replicates per experiment.
+    nR <- length(exps)/length(levels(exps))
+    # This condition is checking for the counts to be higher than the threshold t, in at least g experiments.
+    if ( sum(agT >= nR) >= g ) {
+      fDF <- rbind(fDF, row)
+      rows <- append(rows, rownames(gem)[i])
+    }
+  }
+  colnames(fDF) <- colnames(gem)
+  rownames(fDF) <- rows
+  return(fDF)
 }
 
 
-geneBoxplotCond <- function(matrix, name, experiments, treatments, jit_width = 0.1, point_size = 2, ...){
-  # Function to plot expression of individual gene.
-  # Experiment: are the different fractions.
-  # Treatment: is High or Low glucose.
-  ge <- data.frame(t(matrix[name,]));
-  ge$exp <- experiments;
-  ge$treat <- treatments;
-  colnames(ge)[1] <- "TPM";
-  p <- ggplot(ge, aes(exp, TPM));
-  p + geom_jitter(aes(color = treat), width = jit_width, size = point_size) + ggtitle(name);
+filter_noisy_counts <- function(gem, exps, c = 0.5, ...){
+  # Function to filter out lowly expressed (i.e. counts) genes.
+  # gem: Gene Expression Matrix. A data frame with the conditions as columns and the gene expression profiles as rows.
+  # exps: Experiments. A factor specifying the grouping of experiments. MUST have lenght of the colnames of gem and MUST specify the different levels (i.e. treatments) of the data.
+  # c: Coefficient of variation threshold.
+  fDF <- data.frame()
+  rows <- vector()
+  for (i in 1:nrow(gem)) {
+    row <- as.numeric(gem[i,])
+    means <- aggregate(row~exps, FUN = mean)$row
+    sds <- aggregate(row~exps, FUN = sd)$row
+    cvs <- sds/means
+    cvs[is.na(cvs)] <- Inf
+    lg <- length(levels(exps))
+    # Condition to filter all genes whose coefficient of variation is more than c in at least one experiment.
+    if (sum(cvs <= c) == lg) {
+      fDF <- rbind(fDF, row)
+      rows <- append(rows, rownames(gem)[i])
+    }
+  }
+  colnames(fDF) <- colnames(gem)
+  rownames(fDF) <- rows
+  return(fDF)
 }
 
 
-lowExpression_filter <- function(e, groups, thres = 3, samples = 1, coefVar = 0.5, ...){
+filter_low_expression <- function(e, groups, thres = 3, samples = 1, coefVar = 0.5, ...){
   # Function to filter lowly expressed genes.
   # e      : raw counts data.frame (or cpm, or tpm matrix).
   # groups : factor designating the grouping(s) (conditions, treatments etc.) it MUST be of equal length to the columns of e and its levels must represent the different groups (conditions).
@@ -78,6 +111,29 @@ lowExpression_filter <- function(e, groups, thres = 3, samples = 1, coefVar = 0.
   colnames(filteredDF) <- colnames(e)
   rownames(filteredDF) <- rows
   return(filteredDF)
+}
+
+
+## Ploting functions ------------------
+
+plotMatrixBoxplot <- function(df, ...) {
+  # Function that plots a violin - jitter plot of a numeric matrix.
+  dff <- df %>% rownames_to_column(var = "GeneID") %>% gather(Experiment, LogFC, -GeneID, factor_key = TRUE)
+  p <- ggplot(dff, aes(x = Experiment, y = LogFC, color = Experiment)) + geom_violin(trim = FALSE) + geom_jitter(aes(alpha = 0.5), position = position_jitter(0.25)) + stat_summary(fun.data= mean_sdl, geom = "pointrange", color = "dimgrey", size = 1) + stat_summary(fun.y = median, geom = "point", shape = 95, size = 10, color = "black") + scale_color_brewer(palette = "Dark2") + theme_linedraw()
+  return(p)
+}
+
+
+geneBoxplotCond <- function(matrix, name, experiments, treatments, jit_width = 0.1, point_size = 2, ...){
+  # Function to plot expression of individual gene.
+  # Experiment: are the different fractions.
+  # Treatment: is High or Low glucose.
+  ge <- data.frame(t(matrix[name,]));
+  ge$exp <- experiments;
+  ge$treat <- treatments;
+  colnames(ge)[1] <- "TPM";
+  p <- ggplot(ge, aes(exp, TPM));
+  p + geom_jitter(aes(color = treat), width = jit_width, size = point_size) + ggtitle(name);
 }
 
 
@@ -137,7 +193,7 @@ plot_unSupervised_clust <- function(data, method, scale = FALSE, title = "", ...
 }
 
 
-# Low lwvwel function to put the counts on a boxplot.
+# Low levwel function to add counts on a boxplot.
 n_fun <- function(x){
   return(data.frame(y = max(x), label = length(x)))
 }
