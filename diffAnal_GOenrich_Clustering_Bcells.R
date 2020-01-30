@@ -442,7 +442,6 @@ for (r in row.names(featDF)) {
   if (featDF[r,]$Cluster %in% c(2,3)) featDF[r,]$Translation <- "Inter"
 }
 
-
 # Plot the Coding length boxplots
 ggplot(featDF[featDF$coding_len <= 4000,], aes(x = Cluster, y = coding_len, fill = Translation, group = Cluster)) +
   #coord_cartesian(ylim = c(0, 4000)) + # BETTER put the triming on the DF level above.
@@ -1063,6 +1062,92 @@ ggbetweenstats( # Group translation
   k = 2,
   title = "CAI distribution of the 3 translation behaviours") +
   ggplot2::scale_color_manual(values =  c("#D55E00", "#0072B2", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
+
+
+## Cluster Enrichemnts ------------------------------------
+# Retrieve the gene names for each cluster from the features data frame.
+genesClust1ENS <- as.vector(subset(featDF, featDF$Cluster == 1)$ensembl_gene_id)
+genesClust2ENS <- as.vector(subset(featDF, featDF$Cluster == 2)$ensembl_gene_id)
+genesClust3ENS <- as.vector(subset(featDF, featDF$Cluster == 3)$ensembl_gene_id)
+genesClust4ENS <- as.vector(subset(featDF, featDF$Cluster == 4)$ensembl_gene_id)
+genesClust5ENS <- as.vector(subset(featDF, featDF$Cluster == 5)$ensembl_gene_id)
+genesClust6ENS <- as.vector(subset(featDF, featDF$Cluster == 6)$ensembl_gene_id)
+genesTranslUP <- as.vector(subset(featDF, featDF$Translation == "Up")$ensembl_gene_id)
+genesTranslDOWN <- as.vector(subset(featDF, featDF$Translation == "Down")$ensembl_gene_id)
+genesTranslINTER <- as.vector(subset(featDF, featDF$Translation == "Inter")$ensembl_gene_id)
+
+# GO enrichments
+#Cluster1
+egoClust1_MF <- enrichGO(gene = genesClust1ENS, OrgDb = org.Hs.eg.db, ont = "MF", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
+barplot(egoClust1_MF, title = "Cluster1 GO enrichment MF", showCategory = 20)
+egoClust1_BP <- enrichGO(gene = genesClust1ENS, OrgDb = org.Hs.eg.db, ont = "BP", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
+barplot(egoClust1_BP, title = "Cluster1 GO BP enrichment", showCategory = 20)
+egoClust1_ALL <- enrichGO(gene = genesClust1ENS, OrgDb = org.Hs.eg.db, ont = "ALL", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", pool = TRUE, readable = TRUE)
+barplot(egoClust1_ALL, title = "Cluster1 ALL GO enrichment", showCategory = 20)
+
+#Cluster6
+egoClust6_MF <- enrichGO(gene = genesClust6ENS, OrgDb = org.Hs.eg.db, ont = "MF", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
+barplot(egoClust6_MF, title = "Cluster6 GO enrichment MF", showCategory = 20)
+egoClust6_BP <- enrichGO(gene = genesClust6ENS, OrgDb = org.Hs.eg.db, ont = "BP", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
+barplot(egoClust6_BP, title = "Cluster6 GO BP enrichment", showCategory = 20)
+egoClust6_ALL <- enrichGO(gene = genesClust6ENS, OrgDb = org.Hs.eg.db, ont = "ALL", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", pool = TRUE, readable = TRUE)
+barplot(egoClust6_ALL, title = "Cluster6 ALL GO enrichment", showCategory = 20)
+
+#Cluster4
+egoClust4_MF <- enrichGO(gene = genesClust4ENS, OrgDb = org.Hs.eg.db, ont = "MF", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
+barplot(egoClust4_MF, title = "Cluster4 GO enrichment MF", showCategory = 20)
+egoClust4_BP <- enrichGO(gene = genesClust4ENS, OrgDb = org.Hs.eg.db, ont = "BP", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
+barplot(egoClust4_BP, title = "Cluster4 GO BP enrichment", showCategory = 20)
+egoClust4_ALL <- enrichGO(gene = genesClust4ENS, OrgDb = org.Hs.eg.db, ont = "ALL", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", pool = TRUE, readable = TRUE)
+barplot(egoClust4_ALL, title = "Cluster4 ALL GO enrichment", showCategory = 20)
+
+#Cluster5
+egoClust5_MF <- enrichGO(gene = genesClust5ENS, OrgDb = org.Hs.eg.db, ont = "MF", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
+barplot(egoClust5_MF, title = "Cluster5 GO enrichment MF", showCategory = 20)
+egoClust5_BP <- enrichGO(gene = genesClust5ENS, OrgDb = org.Hs.eg.db, ont = "BP", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
+barplot(egoClust5_BP, title = "Cluster5 GO BP enrichment", showCategory = 20)
+egoClust5_ALL <- enrichGO(gene = genesClust5ENS, OrgDb = org.Hs.eg.db, ont = "ALL", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", pool = TRUE, readable = TRUE)
+barplot(egoClust5_ALL, title = "Cluster5 ALL GO enrichment", showCategory = 20)
+
+#Cluster2
+egoClust2_MF <- enrichGO(gene = genesClust2ENS, OrgDb = org.Hs.eg.db, ont = "MF", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
+barplot(egoClust2_MF, title = "Cluster2 GO enrichment MF", showCategory = 20)
+egoClust2_BP <- enrichGO(gene = genesClust2ENS, OrgDb = org.Hs.eg.db, ont = "BP", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
+barplot(egoClust2_BP, title = "Cluster2 GO BP enrichment", showCategory = 20)
+egoClust2_ALL <- enrichGO(gene = genesClust2ENS, OrgDb = org.Hs.eg.db, ont = "ALL", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", pool = TRUE, readable = TRUE)
+barplot(egoClust2_ALL, title = "Cluster2 ALL GO enrichment", showCategory = 20)
+
+#Cluster3
+egoClust3_MF <- enrichGO(gene = genesClust3ENS, OrgDb = org.Hs.eg.db, ont = "MF", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
+barplot(egoClust3_MF, title = "Cluster3 GO enrichment MF", showCategory = 20)
+egoClust3_BP <- enrichGO(gene = genesClust3ENS, OrgDb = org.Hs.eg.db, ont = "BP", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
+barplot(egoClust3_BP, title = "Cluster3 GO BP enrichment", showCategory = 20)
+egoClust3_ALL <- enrichGO(gene = genesClust3ENS, OrgDb = org.Hs.eg.db, ont = "ALL", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", pool = TRUE, readable = TRUE)
+barplot(egoClust3_ALL, title = "Cluster3 ALL GO enrichment", showCategory = 20)
+
+#Translation UP
+egoTranslUP_MF <- enrichGO(gene = genesTranslUP, OrgDb = org.Hs.eg.db, ont = "MF", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
+barplot(egoTranslUP_MF, title = "TranslUP GO enrichment MF", showCategory = 20)
+egoTranslUP_BP <- enrichGO(gene = genesTranslUP, OrgDb = org.Hs.eg.db, ont = "BP", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
+barplot(egoTranslUP_BP, title = "TranslUP GO BP enrichment", showCategory = 20)
+egoTranslUP_ALL <- enrichGO(gene = genesTranslUP, OrgDb = org.Hs.eg.db, ont = "ALL", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", pool = TRUE, readable = TRUE)
+barplot(egoTranslUP_ALL, title = "TranslUP ALL GO enrichment", showCategory = 20)
+
+#Translation Inter
+egoTranslInter_MF <- enrichGO(gene = genesTranslINTER, OrgDb = org.Hs.eg.db, ont = "MF", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
+barplot(egoTranslInter_MF, title = "TranslInter GO enrichment MF", showCategory = 20)
+egoTranslInter_BP <- enrichGO(gene = genesTranslINTER, OrgDb = org.Hs.eg.db, ont = "BP", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
+barplot(egoTranslInter_BP, title = "TranslInter GO BP enrichment", showCategory = 20)
+egoTranslInter_ALL <- enrichGO(gene = genesTranslINTER, OrgDb = org.Hs.eg.db, ont = "ALL", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", pool = TRUE, readable = TRUE)
+barplot(egoTranslInter_ALL, title = "TranslInter ALL GO enrichment", showCategory = 20)
+
+#Translation DOWN
+egoTranslDOWN_MF <- enrichGO(gene = genesTranslDOWN, OrgDb = org.Hs.eg.db, ont = "MF", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
+barplot(egoTranslDOWN_MF, title = "TranslDOWN GO enrichment MF", showCategory = 20)
+egoTranslDOWN_BP <- enrichGO(gene = genesTranslDOWN, OrgDb = org.Hs.eg.db, ont = "BP", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
+barplot(egoTranslDOWN_BP, title = "TranslDOWN GO BP enrichment", showCategory = 20)
+egoTranslDOWN_ALL <- enrichGO(gene = genesTranslDOWN, OrgDb = org.Hs.eg.db, ont = "ALL", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", pool = TRUE, readable = TRUE)
+barplot(egoTranslDOWN_ALL, title = "TranslDOWN ALL GO enrichment", showCategory = 20)
 
 
 ## Translation Ratio analyses -----------------------------
@@ -1747,6 +1832,13 @@ ggbetweenstats(
   k = 1,
   title = "CAI distribution of the 3 groups of translation differences.") +
   ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
+
+
+## TOP RNA analysis ---------------------------------------
+# Known TOPrna from the union of 3 publications.
+topRNAs <- read.table("publishedTOPrnas.csv", header=TRUE, sep = "\t")
+topRNAsList <- list("Known" = as.vector(topRNAs$union.of.3[topRNAs$union.of.3 != ""]), "Cluster1" = as.vector(topRNAs$DEGs_Cluster.1[topRNAs$DEGs_Cluster.1 != ""]), "Cluster6" = as.vector(topRNAs$DEGs_Cluster.6[topRNAs$DEGs_Cluster.6 != ""]))
+plot(euler(topRNAsList, shape = "ellipse"), quantities = TRUE)
 
 
 ## UTRDB analysis -----------------------------------------
