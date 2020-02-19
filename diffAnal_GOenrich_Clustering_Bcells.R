@@ -1843,8 +1843,8 @@ plot(euler(topRNAsList, shape = "ellipse"), quantities = TRUE)
 
 ## UTRDB analysis -----------------------------------------
 # Read the table from the UTRDB website analysis (the data file is preproccessed!!!!)
-utr_5_table <- read.table("rnaFeat/utrScan_5utr_results.txt", sep = ":", header = TRUE)
-utr_3_table <- read.table("rnaFeat/utrScan_3utr_results.txt", sep = ":", header = TRUE)
+utr_5_table <- read.table("rna_feat/201904/utrScan_5utr_results.txt", sep = ":", header = TRUE)
+utr_3_table <- read.table("rna_feat/201904/utrScan_3utr_results.txt", sep = ":", header = TRUE)
 
 # Keep only the features column
 utr_5_slice <- as.data.frame(utr_5_table[, c("trascript_ID", "feature")])
@@ -1867,11 +1867,23 @@ utr3_matrix_features$trascript_ID <- NULL
 
 # 5'UTRs plotting clustering
 # For the 5'UTRs we have a range between 0 and 13 that's why we use 14 colours.
-colours5p <-  c("white", "#C6DBEF", "#4292C6", replicate(3, "#2171B5"), replicate(8, "#08306B"))
+colours5p <-  c("white", "#C6DBEF", "#4292C6", replicate(3, "#2171B5      "), replicate(8, "#08306B"))
 heatmap(as.matrix(utr5_matrix_features), scale = "none", col = colours5p)
 heatmap(as.matrix(utr5_matrix_features[,c(3,8,10)]), scale = "none", col = colours5p)
+# These are the default, make a more decenmt heatmap.
+utr5_matrixPlot <- utr5_matrix_features[,c(3,8,10)]
+utr5_matrixPlot <- utr5_matrixPlot[rowSums(utr5_matrixPlot) != 0,]
+# Add an extra column from the clustering
+utr5_matrixPlot$Clust <- ""
+for (t in rownames(utr5_matrixPlot)){
+  tt <- subset(featDF, featDF$X == t)
+  utr5_matrixPlot[t,]$Clust <- tt$Cluster
+}
+dist5pUTR <- dist(utr5_matrixPlot[,1:3], method = "manhattan")
+clust5pUTR <- hclust(dist5pUTR, method = "ward.D")
+heatmap.2(as.matrix(utr5_matrixPlot[,1:3]), scale = "none", col = colours5p, Rowv = as.dendrogram(clust5pUTR), Colv = FALSE, trace = "none", key = FALSE,  dendrogram="row",  margins = c(7, 7), main = "5'UTR features heatmap", RowSideColors = as.character(utr5_matrixPlot$Clust))
 
-# 3'UTRs plotting clustering
+# 3'UTRs plotting clustering  
 # Preprocess the 3'UTR data frame.
 utr3_features_final <- utr3_matrix_features[-c(11, 13, 18, 20)]
 row_sub = apply(utr3_features_final, 1, function(row) any(row != 0 ))
@@ -1881,10 +1893,8 @@ heatmap(as.matrix(utr3_features_final), scale = "none", col = colours3p)
 heatmap(as.matrix(utr3_features_final[,c(2,4,6,8,11,14,16)]), scale = "none", col = colours3p)
 
 
-
 #G4 analysis
-G4_genes <- read.table("data_results//G4_5UTR_names.txt", header = F, sep = ";")
-
+G4_genes <- read.table("rna_feat/201904/G4_5UTR_names.txt", header = F, sep = ";")
 G4_unique <- unique(G4_genes$V1)
 degs_g4_names <- intersect(G4_unique, degs)
 G4_names_cluster <- clusterGeneIDs[degs_g4_names,, drop = FALSE]
