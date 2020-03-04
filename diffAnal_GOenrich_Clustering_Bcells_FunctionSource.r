@@ -46,11 +46,11 @@ filter_low_counts <- function(gem, exps, g = 1, t = 5, ...){
   for (i in 1:nrow(gem)) {
     row <- as.numeric(gem[i,])
     # Calculate how many times you get more counts than the threshold in each experiment.
-    agT <- rowSums(aggregate(row~exps, FUN = function(v){return(v >= t)})$row)
-    # THIS is the number of replicates per experiment.
-    nR <- length(exps)/length(levels(exps))
+    agT <- aggregate(row~exps, FUN = function(v){return(sum(v >= t))})$row
+    # THIS is the vector of number of replicates per experiment.
+    nR <- table(exprs)
     # This condition is checking for the counts to be higher than the threshold t, in at least g experiments.
-    if ( sum(agT >= nR) >= g ) {
+    if ( sum(agT == nR) >= g ) {
       fDF <- rbind(fDF, row)
       rows <- append(rows, rownames(gem)[i])
     }
