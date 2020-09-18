@@ -24,15 +24,16 @@ library(enrichplot)
 library(igraph)
 library(Factoshiny)
 library(pheatmap)
+library(VennDiagram)
 library(eulerr)
 
 
 ## Functions ----------------------------------------------
 # Source functions from the .r file.
-source("/home/costas/devel/diderot/diffAnalysis_GOenrich_Clustering_Bcells/diffAnal_GOenrich_Clustering_Bcells_FunctionSource.r")
+source("/home/costas/devel/u-paris/diffAnalysis_GOenrich_Clustering_Bcells/diffAnal_GOenrich_Clustering_Bcells_FunctionSource.r")
 
 
-## Preprpocess data DE ------------------------------------
+## Preprocess data DE ------------------------------------
 # Load the counts table.
 countsTableRaw <- read.table("data/countsTOTALS_CodingGenes.tsv", header = TRUE, sep = "\t")
 
@@ -73,12 +74,12 @@ cpmtmpH <- cpmtmpH[apply(cpmtmpH > 1, 1, all),]
 cpmtmpT <- cpmtmpT[apply(cpmtmpT > 1, 1, all),]
 
 # Filter the CPM,
-cpmallM <- lowExpression_filter(cpmtmpM, groupsformatrix_M, thres = 4, samples = 2)
-cpmallL <- lowExpression_filter(cpmtmpL, groupsformatrix_L, thres = 4, samples = 2)
-cpmallH <- lowExpression_filter(cpmtmpH, groupsformatrix_H, thres = 4, samples = 2)
-cpmallT <- lowExpression_filter(cpmtmpT, groupsformatrix_T, thres = 4, samples = 2)
+cpmallM <- filter_low_expression(cpmtmpM, groupsformatrix_M, thres = 4, samples = 2)
+cpmallL <- filter_low_expression(cpmtmpL, groupsformatrix_L, thres = 4, samples = 2)
+cpmallH <- filter_low_expression(cpmtmpH, groupsformatrix_H, thres = 4, samples = 2)
+cpmallT <- filter_low_expression(cpmtmpT, groupsformatrix_T, thres = 4, samples = 2)
 
-# Collect all the names of filtred genes.
+# Collect all the names of filtered genes.
 cpm_Filt_names <- unique(c(rownames(cpmallM), rownames(cpmallL), rownames(cpmallH), rownames(cpmallT)))
 
 # Extract the counts of the filtered genes.
@@ -156,7 +157,7 @@ tfitM <- treat(vfitM, lfc = log2(1.1))
 ttM <- decideTests(tfitM)
 summary(ttM)
 
-plotMD(efitM, column = 1, status = efM[,1], main = colnames(efitM)[1],ylim = c( -1.5, 1.5))
+plotMD(efitM, column = 1, status = efM[,1], main = colnames(efitM)[1],ylim = DEHc( -1.5, 1.5))
 
 
 ### DiffExp Light ribosomes -------------------------------
@@ -213,22 +214,31 @@ DEH <- topTable(efitH, coef = 1, p.value = 0.05, lfc = 0.5, number = Inf)
 DEL <- topTable(efitL, coef = 1, p.value = 0.05, lfc = 0.5, number = Inf)
 DEM <- topTable(efitM, coef = 1, p.value = 0.05, lfc = 0.5, number = Inf)
 DET <- topTable(efitT, coef = 1, p.value = 0.05, lfc = 0.5, number = Inf)
+DEHup <- subset(DEH, DEH$logFC > 0)
+DEHdown <- subset(DEH, DEH$logFC < 0)
+DELup <- subset(DEL, DEL$logFC > 0)
+DELdown <- subset(DEL, DEL$logFC < 0)
+DETup <- subset(DET, DET$logFC > 0)
+DETdown <- subset(DET, DET$logFC < 0)
+
 
 degs <- union(rownames(DEL), rownames(DEH))
-write(degs, "degs_02052019_geneNames.txt")
+write(degs, "degs_17092020_geneNames.txt")
 
 
 ### Venn diagrams -----------------------------------------
 # Intersection between Light, Heavy, Total
-vennALL <- venn.diagram(list(Heavy = rownames(DEH), Light = rownames(DEL), Total = rownames(DET)), NULL, fill = c("darkorange1", "deepskyblue3", "darkolivegreen4"), alpha = c(0.5, 0.5, 0.5), cex = 3)
+# DEPRECATED vennALL <- venn.diagram(list(Heavy = rownames(DEH), Light = rownames(DEL), Total = rownames(DET)), NULL, fill = c("darkorange1", "deepskyblue3", "darkolivegreen4"), alpha = c(0.5, 0.5, 0.5), cex = 3) DEPRECATED #
 
-#Venn diagrams vith eulerr package
-fit_Venn <- euler(c("Heavy_P" = 183, "Light_P" = 164, "Total" = 12, "Heavy_P&Light_P" = 51, "Heavy_P&Total" = 1, "Light_P&Total" = 3, "Heavy_P&Light_P&Total" = 1), shape = "ellipse")
+# Venn diagrams with eulerr package
+polyVenn <- list("Heavy_UP" = rownames(DEHup), "Light_UP" = rownames(DELup), "Total_UP" = rownames(DETup), "Heavy_DOWN" = rownames(DEHdown), "Light_DOWN" = rownames(DELdown), "Total_DOWN" = rownames(DETdown))
 
-plot(fit_Venn,quantities = TRUE, labels = list(font = 4), fills = c("dodgerblue4", "darkgoldenrod1", "cornsilk4"))
+plot(euler(polyVenn, shape = "ellipse"), quantities = TRUE)
+
+# VEnn diagram figure 1 paper.
 
 
-#### Preprocess Translation data --------------------------
+#### Process Translation data --------------------------
 tpmPPglu <- read.table("data/polysomeProfile_TPM_proteinCoding.csv", header = TRUE, sep = ";")
 
 row_NON_zero <- apply(tpmPPglu, 1, function(row) all(row != 0))
@@ -1883,7 +1893,7 @@ dist5pUTR <- dist(utr5_matrixPlot[,1:3], method = "manhattan")
 clust5pUTR <- hclust(dist5pUTR, method = "ward.D")
 heatmap.2(as.matrix(utr5_matrixPlot[,1:3]), scale = "none", col = colours5p, Rowv = as.dendrogram(clust5pUTR), Colv = FALSE, trace = "none", key = FALSE,  dendrogram="row",  margins = c(7, 7), main = "5'UTR features heatmap", RowSideColors = as.character(utr5_matrixPlot$Clust))
 
-# 3'UTRs plotting clustering  
+# 3'UTRs plotting clustering
 # Preprocess the 3'UTR data frame.
 utr3_features_final <- utr3_matrix_features[-c(11, 13, 18, 20)]
 row_sub = apply(utr3_features_final, 1, function(row) any(row != 0 ))
