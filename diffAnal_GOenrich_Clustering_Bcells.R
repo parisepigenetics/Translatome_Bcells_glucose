@@ -27,7 +27,6 @@ library(pheatmap)
 library(VennDiagram)
 library(eulerr)
 
-
 ## Functions ----------------------------------------------
 # Source functions from the .r file.
 source("/home/costas/devel/u-paris/diffAnalysis_GOenrich_Clustering_Bcells/diffAnal_GOenrich_Clustering_Bcells_FunctionSource.r")
@@ -112,6 +111,12 @@ fviz_pca_ind(res.pca.CPMs,
              legend.title = "Groups",
              title = "PCA on the Polysome profile CPMs table.")
 
+# Cluster transcriptome CPMs.
+hcT <- hclust(dist(t(cpmallT)), method = "ward.D2")
+clus2 = cutree(hcT, 2)
+colCl <- c("green", "red")
+plot(as.dendrogram(hcT))
+fviz_dend(hcT, cex = 1.5, main = "", k =2, k_colors = c("#00AFBB", "#FC4E07"), color_labels_by_k = TRUE, xlab = "Total mRNA samples", ylab = "", sub = "", ggtheme = theme_ggstatsplot())
 
 ## Differential Expression analysis -----------------------
 # Form the design matrices
@@ -157,7 +162,7 @@ tfitM <- treat(vfitM, lfc = log2(1.1))
 ttM <- decideTests(tfitM)
 summary(ttM)
 
-plotMD(efitM, column = 1, status = efM[,1], main = colnames(efitM)[1],ylim = DEHc( -1.5, 1.5))
+plotMD(efitM, column = 1, status = efM[,1], main = colnames(efitM)[1],ylim = c( -1.5, 1.5))
 
 
 ### DiffExp Light ribosomes -------------------------------
@@ -1853,8 +1858,8 @@ plot(euler(topRNAsList, shape = "ellipse"), quantities = TRUE)
 
 ## UTRDB analysis -----------------------------------------
 # Read the table from the UTRDB website analysis (the data file is preproccessed!!!!)
-utr_5_table <- read.table("rna_feat/201904/utrScan_5utr_results.txt", sep = ":", header = TRUE)
-utr_3_table <- read.table("rna_feat/201904/utrScan_3utr_results.txt", sep = ":", header = TRUE)
+utr_5_table <- read.table("rna_feat/201904/utrScan_5utr_results.txt", sep = ":", header = TRUE, strip.white = TRUE)
+utr_3_table <- read.table("rna_feat/201904/utrScan_3utr_results.txt", sep = ":", header = TRUE, strip.white = TRUE)
 
 # Keep only the features column
 utr_5_slice <- as.data.frame(utr_5_table[, c("trascript_ID", "feature")])
@@ -1865,8 +1870,8 @@ utr5 <- as.data.frame(utr_5_slice %>% dplyr::count(trascript_ID, feature, sort =
 utr3 <- as.data.frame(utr_3_slice %>% dplyr::count(trascript_ID, feature, sort = TRUE, .drop = FALSE))
 
 # Spread the data.
-utr5_matrix_features <- utr5 %>%  spread(key = feature, value = n)
-utr3_matrix_features <- utr3 %>%  spread(key = feature, value = n)
+utr5_matrix_features <- utr5 %>%  spread(key = feature, value = n, fill = 0)
+utr3_matrix_features <- utr3 %>%  spread(key = feature, value = n, fill = 0)
 
 # Sort out the rownames
 rownames(utr5_matrix_features) <- utr5_matrix_features$trascript_ID
@@ -1877,21 +1882,32 @@ utr3_matrix_features$trascript_ID <- NULL
 
 # 5'UTRs plotting clustering
 # For the 5'UTRs we have a range between 0 and 13 that's why we use 14 colours.
-colours5p <-  c("white", "#C6DBEF", "#4292C6", replicate(3, "#2171B5      "), replicate(8, "#08306B"))
+colours5p <-  c("white", "#C6DBEF", "#4292C6", replicate(3, "#2171B5"), replicate(8, "#08306B"))
 heatmap(as.matrix(utr5_matrix_features), scale = "none", col = colours5p)
-heatmap(as.matrix(utr5_matrix_features[,c(3,8,10)]), scale = "none", col = colours5p)
+heatmap(as.matrix(utr5_matrix_features[,c(3,8,10)]), scale = "none", col = colours5p, Colv = FALSE)
 # These are the default, make a more decenmt heatmap.
 utr5_matrixPlot <- utr5_matrix_features[,c(3,8,10)]
 utr5_matrixPlot <- utr5_matrixPlot[rowSums(utr5_matrixPlot) != 0,]
 # Add an extra column from the clustering
-utr5_matrixPlot$Clust <- ""
+utr5_matrixPlot$Clust <- 0
 for (t in rownames(utr5_matrixPlot)){
   tt <- subset(featDF, featDF$X == t)
   utr5_matrixPlot[t,]$Clust <- tt$Cluster
 }
 dist5pUTR <- dist(utr5_matrixPlot[,1:3], method = "manhattan")
 clust5pUTR <- hclust(dist5pUTR, method = "ward.D")
-heatmap.2(as.matrix(utr5_matrixPlot[,1:3]), scale = "none", col = colours5p, Rowv = as.dendrogram(clust5pUTR), Colv = FALSE, trace = "none", key = FALSE,  dendrogram="row",  margins = c(7, 7), main = "5'UTR features heatmap", RowSideColors = as.character(utr5_matrixPlot$Clust))
+# Add the common gene names instead of ENSEMBLE IDs.
+featDFi <- featDF
+rownames(featDFi) <- featDFi$X
+featDFi$X <- NULL
+utr5_matrixPlot$gene_name <- featDFi[rownames(utr5_matrixPlot), ]$gene_name
+rownames(utr5_matrixPlot) <- utr5_matrixPlot$gene_name
+heatmap.2(as.matrix(utr5_matrixPlot[,1:3]), scale = "none", col = colours5p, Rowv = as.dendrogram(clust5pUTR), Colv = FALSE, trace = "none", key = FALSE,  dendrogram = "row",  margins = c(7, 7), RowSideColors = as.character(utr5_matrixPlot$Clust))
+
+# Select the clusters of  mRNAs with a uORF
+uorfDF <- data.frame("Cluster" = utr5_matrixPlot[rownames(subset(utr5_matrix_features, utr5_matrix_features$uORF>0)),]$Clust, row.names = rownames(subset(utr5_matrix_features, utr5_matrix_features$uORF>0)))
+uorfDF <- uorfDF[order(uorfDF$Cluster, decreasing = TRUE),, drop = FALSE]
+
 
 # 3'UTRs plotting clustering
 # Preprocess the 3'UTR data frame.
@@ -1900,8 +1916,7 @@ row_sub = apply(utr3_features_final, 1, function(row) any(row != 0 ))
 utr3_features_final <- utr3_features_final[row_sub,]
 colours3p <-  c("white", "#C6DBEF", "#4292C6", "#2171B5", "#08306B")
 heatmap(as.matrix(utr3_features_final), scale = "none", col = colours3p)
-heatmap(as.matrix(utr3_features_final[,c(2,4,6,8,11,14,16)]), scale = "none", col = colours3p)
-
+heatmap.2(as.matrix(utr3_features_final[,c(2,4,6,8,11,14,16)]), scale = "none", col = colours3p, Colv = FALSE, dendrogram = "row", trace = "none", key = FALSE, margins = c(7, 7))
 
 #G4 analysis
 G4_genes <- read.table("rna_feat/201904/G4_5UTR_names.txt", header = F, sep = ";")
