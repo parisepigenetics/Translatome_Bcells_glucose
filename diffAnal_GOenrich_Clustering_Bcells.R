@@ -118,6 +118,7 @@ colCl <- c("green", "red")
 plot(as.dendrogram(hcT))
 fviz_dend(hcT, cex = 1.5, main = "", k =2, k_colors = c("#00AFBB", "#FC4E07"), color_labels_by_k = TRUE, xlab = "Total mRNA samples", ylab = "", sub = "", ggtheme = theme_ggstatsplot())
 
+
 ## Differential Expression analysis -----------------------
 # Form the design matrices
 designMat_M <- model.matrix(~0+groupsformatrix_M)
@@ -457,6 +458,7 @@ for (r in row.names(featDF)) {
   if (featDF[r,]$Cluster %in% c(2,3)) featDF[r,]$Translation <- "Inter"
 }
 
+## BOXPLOTS
 # Plot the Coding length boxplots
 ggplot(featDF[featDF$coding_len <= 4000,], aes(x = Cluster, y = coding_len, fill = Translation, group = Cluster)) +
   #coord_cartesian(ylim = c(0, 4000)) + # BETTER put the triming on the DF level above.
@@ -466,49 +468,35 @@ ggplot(featDF[featDF$coding_len <= 4000,], aes(x = Cluster, y = coding_len, fill
   #stat_compare_means(comparisons = list(c(1, 2), c(1, 3), c(1, 4), c(1, 5), c(6, 2), c(6, 3), c(6, 4), c(6, 5), c(2, 4), c(3, 5)), method = "t.test", tip.length = 0, hide.ns = TRUE, size = 2.5) +
   theme(legend.position = "topleft") +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
-  ylab("Coding Length") +
-  xlab("Clusters") +
+  ylab("Coding Length") + xlab("Clusters") +
   ggtitle("Coding length distribution of the 6 MClust clusters") +
   theme_bw()
 
 ggbetweenstats( # Group clusters
-  ggtheme = ggthemes::theme_clean(),
-  data = featDF[featDF$coding_len <= 4000,],
-  x = Cluster,
-  y = coding_len,
-  notch = TRUE,
-  point.jitter.width = 0.6,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 1,
-  title = "Coding length distribution of the 6 MClust clusters") +
+  ggtheme = theme_pubr(), ylab = "Coding Length",
+  data = featDF[featDF$coding_len <= 4000,],  # Select the ones less than 4000.
+  x = Cluster, y = coding_len,
+  notch = TRUE, point.jitter.width = 0.6,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+#  title = "Coding length distribution of the 6 MClust clusters",
+  k = 1, results.subtitle = TRUE) +
   ggplot2::scale_color_manual(values = c("#009E73", "#0072B2", "#0072B2", "#D55E00", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
 
 ggbetweenstats( # Group translation
-  ggtheme = ggthemes::theme_clean(),
+  ggtheme = theme_ggstatsplot(), ylab = "Coding Length",
   data = featDF[featDF$coding_len <= 4000,],
-  x = Translation,
-  y = coding_len,
-  notch = TRUE,
-  point.jitter.width = 0.4,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 1,
-  title = "Coding length distribution of the 3 translation behaviours") +
+  x = Translation, y = coding_len,
+  notch = TRUE, point.jitter.width = 0.4,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  title = "Coding length distribution of the 3 translation behaviours",
+  k = 1, results.subtitle = TRUE) +
   ggplot2::scale_color_manual(values =  c("#D55E00", "#0072B2", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
-
 
 # Plot the GC content boxplots
 ggplot(featDF, aes(x = Cluster, y = GC, fill = Translation, group = Cluster)) +
@@ -518,49 +506,35 @@ ggplot(featDF, aes(x = Cluster, y = GC, fill = Translation, group = Cluster)) +
   stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "dodge") +
   theme(legend.position = "topleft") +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
-  ylab("GC") +
-  xlab("Clusters") +
+  ylab("GC") + xlab("Clusters") +
   ggtitle("Transcript GC content distribution of the 6 Mclust clusters") +
   theme_bw()
 
 ggbetweenstats( # Group clusters
-  ggtheme = ggthemes::theme_clean(),
-  data = featDF,
-  x = Cluster,
-  y = GC,
-  notch = TRUE,
-  point.jitter.width = 0.6,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 1,
-  title = "GC content distribution of the 6 MClust clusters") +
+  ggtheme = theme_pubr(),
+  data = featDF, ylab = "GC",
+  x = Cluster, y = GC,
+  notch = TRUE, point.jitter.width = 0.6,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  #title = "GC content distribution of the 6 MClust clusters",
+  k = 1, results.subtitle = TRUE) +
   ggplot2::scale_color_manual(values = c("#009E73", "#0072B2", "#0072B2", "#D55E00", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
 
 ggbetweenstats( # Group translation
-  ggtheme = ggthemes::theme_clean(),
-  data = featDF[featDF$coding_len <= 4000,],
-  x = Translation,
-  y = GC,
-  notch = TRUE,
-  point.jitter.width = 0.4,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 1,
-  title = "GC content distribution of the 3 translation behaviours") +
+  ggtheme = theme_ggstatsplot(),
+  data = featDF[featDF$coding_len <= 4000,], ylab = "GC",
+  x = Translation, y = GC,
+  notch = TRUE, point.jitter.width = 0.4,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  title = "GC content distribution of the 3 translation behaviours",
+  k = 1, results.subtitle = TRUE) +
   ggplot2::scale_color_manual(values =  c("#D55E00", "#0072B2", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
-
 
 # Plot the 5UTR length boxplots
 ggplot(featDF[featDF$len_5pUTR <= 1000,], aes(x = Cluster, y = len_5pUTR, fill = Translation, group = Cluster)) +
@@ -572,45 +546,33 @@ ggplot(featDF[featDF$len_5pUTR <= 1000,], aes(x = Cluster, y = len_5pUTR, fill =
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
   ylab("5'UTR Length") +
   xlab("Cluster") +
-  ggtitle("5'UTR length distribution of the 6 Mclust clusters") +
+  #ggtitle("5'UTR length distribution of the 6 Mclust clusters") +
   theme_bw()
 
 ggbetweenstats( # Group clusters
-  ggtheme = ggthemes::theme_clean(),
-  data = featDF[featDF$len_5pUTR <= 1000,],
-  x = Cluster,
-  y = len_5pUTR,
-  notch = TRUE,
-  point.jitter.width = 0.6,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 1,
-  title = "5'UTR length distribution of the 6 MClust clusters") +
+  ggtheme = theme_pubr(),
+  data = featDF[featDF$len_5pUTR <= 1000,], ylab = "5'UTR length",
+  x = Cluster, y = len_5pUTR,
+  notch = TRUE, point.jitter.width = 0.6,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+#  title = "5'UTR length distribution of the 6 MClust clusters",
+  k = 1, results.subtitle = TRUE) +
   ggplot2::scale_color_manual(values = c("#009E73", "#0072B2", "#0072B2", "#D55E00", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
 
 ggbetweenstats( # Group translation
-  ggtheme = ggthemes::theme_clean(),
-  data = featDF[featDF$len_5pUTR <= 1000,],
-  x = Translation,
-  y = len_5pUTR,
-  notch = TRUE,
-  point.jitter.width = 0.4,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 1,
-  title = "5'UTR length distribution of the 3 translation behaviours") +
+  ggtheme = theme_ggstatsplot(),
+  data = featDF[featDF$len_5pUTR <= 1000,], ylab = "5'UTR length",
+  x = Translation, y = len_5pUTR,
+  notch = TRUE, point.jitter.width = 0.4,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  title = "5'UTR length distribution of the 3 translation behaviours",
+  k = 1, results.subtitle = TRUE) +
   ggplot2::scale_color_manual(values =  c("#D55E00", "#0072B2", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
 
 
@@ -628,43 +590,30 @@ ggplot(featDF, aes(x = Cluster, y = GC_5pUTR, fill = Translation, group = Cluste
   theme_bw()
 
 ggbetweenstats( # Group clusters
-  ggtheme = ggthemes::theme_clean(),
-  data = featDF[featDF$GC_5pUTR >= 25,],
-  x = Cluster,
-  y = GC_5pUTR,
-  notch = TRUE,
-  point.jitter.width = 0.6,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 1,
-  title = "GC 5'UTR distribution of the 6 MClust clusters") +
+  ggtheme = theme_pubr(),
+  data = featDF[featDF$GC_5pUTR >= 25,], ylab = "GC 5pUTR",
+  x = Cluster, y = GC_5pUTR,
+  notch = TRUE, point.jitter.width = 0.6,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  #title = "GC 5'UTR distribution of the 6 MClust clusters",
+  k = 1, results.subtitle = TRUE) +
   ggplot2::scale_color_manual(values = c("#009E73", "#0072B2", "#0072B2", "#D55E00", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
 
 ggbetweenstats( # Group translation
-  ggtheme = ggthemes::theme_clean(),
-  data = featDF[featDF$GC_5pUTR >= 25,],
-  x = Translation,
-  y = GC_5pUTR,
-  notch = TRUE,
-  point.jitter.width = 0.4,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 1,
-  title = "GC 5'UTR distribution of the 3 translation behaviours") +
+  ggtheme = theme_ggstatsplot(),
+  data = featDF[featDF$GC_5pUTR >= 25,], ylab = "GC 5pUTR",
+  x = Translation, y = GC_5pUTR,
+  notch = TRUE, point.jitter.width = 0.4,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  title = "GC 5'UTR distribution of the 3 translation behaviours",
+  k = 1, results.subtitle = TRUE) +
   ggplot2::scale_color_manual(values =  c("#D55E00", "#0072B2", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
-
 
 # Plot the 5UTR MFE boxplots
 ggplot(featDF, aes(x = Cluster, y = MFE_5pUTR, fill = Translation, group = Cluster)) +
@@ -680,43 +629,30 @@ ggplot(featDF, aes(x = Cluster, y = MFE_5pUTR, fill = Translation, group = Clust
   theme_bw()
 
 ggbetweenstats( # Group clusters
-  ggtheme = ggthemes::theme_clean(),
-  data = featDF[featDF$MFE_5pUTR >= -400,],
-  x = Cluster,
-  y = MFE_5pUTR,
-  notch = TRUE,
-  point.jitter.width = 0.6,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 1,
-  title = "MFE 5'UTR distribution of the 6 MClust clusters") +
+  ggtheme = theme_pubr(),
+  data = featDF[featDF$MFE_5pUTR >= -400,], ylab = "5'UTR MFE",
+  x = Cluster, y = MFE_5pUTR,
+  notch = TRUE, point.jitter.width = 0.6,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  #title = "MFE 5'UTR distribution of the 6 MClust clusters",
+  k = 1, results.subtitle = TRUE) +
   ggplot2::scale_color_manual(values = c("#009E73", "#0072B2", "#0072B2", "#D55E00", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
 
 ggbetweenstats( # Group translation
-  ggtheme = ggthemes::theme_clean(),
-  data = featDF[featDF$MFE_5pUTR >= -400,],
-  x = Translation,
-  y = MFE_5pUTR,
-  notch = TRUE,
-  point.jitter.width = 0.4,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 1,
-  title = "MFE 5'UTR distribution of the 3 translation behaviours") +
+  ggtheme = theme_ggstatsplot(),
+  data = featDF[featDF$MFE_5pUTR >= -400,], ylab = "5'UTR MFE",
+  x = Translation, y = MFE_5pUTR,
+  notch = TRUE, point.jitter.width = 0.4,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  title = "MFE 5'UTR distribution of the 3 translation behaviours",
+  k = 1, results.subtitle = TRUE) +
   ggplot2::scale_color_manual(values =  c("#D55E00", "#0072B2", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
-
 
 # Plot the 5UTR MFE_BP boxplots
 ggplot(featDF, aes(x = Cluster, y = MfeBP_5pUTR, fill = Translation, group = Cluster)) +
@@ -731,43 +667,30 @@ ggplot(featDF, aes(x = Cluster, y = MfeBP_5pUTR, fill = Translation, group = Clu
   theme_bw()
 
 ggbetweenstats( # Group clusters
-  ggtheme = ggthemes::theme_clean(),
-  data = featDF[featDF$MfeBP_5pUTR != 0,],
-  x = Cluster,
-  y = MfeBP_5pUTR,
-  notch = TRUE,
-  point.jitter.width = 0.6,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 1,
-  title = "MFE per BP 5'UTR distribution of the 6 MClust clusters") +
+  ggtheme = theme_pubr(),
+  data = featDF[featDF$MfeBP_5pUTR != 0,], ylab = "5'UTR MFE/BP",
+  x = Cluster, y = MfeBP_5pUTR,
+  notch = TRUE, point.jitter.width = 0.6,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  #title = "MFE per BP 5'UTR distribution of the 6 MClust clusters",
+  k = 1, results.subtitle = TRUE) +
   ggplot2::scale_color_manual(values = c("#009E73", "#0072B2", "#0072B2", "#D55E00", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
 
 ggbetweenstats( # Group translation
-  ggtheme = ggthemes::theme_clean(),
-  data = featDF[featDF$MfeBP_5pUTR != 0,],
-  x = Translation,
-  y = MfeBP_5pUTR,
-  notch = TRUE,
-  point.jitter.width = 0.4,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 3,
-  title = "MFE per BP 5'UTR distribution of the 3 translation behaviours") +
+  ggtheme = theme_ggstatsplot(),
+  data = featDF[featDF$MfeBP_5pUTR != 0,], ylab = "5'UTR MFE/BP",
+  x = Translation, y = MfeBP_5pUTR,
+  notch = TRUE, point.jitter.width = 0.4,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  title = "MFE per BP 5'UTR distribution of the 3 translation behaviours",
+  k = 1, results.subtitle = TRUE) +
   ggplot2::scale_color_manual(values =  c("#D55E00", "#0072B2", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
-
 
 # Plot the 3UTR lengths boxplots
 ggplot(featDF[featDF$len_3pUTR <= 4000 & featDF$len_3pUTR !=0,], aes(x = Cluster, y = len_3pUTR, fill = Translation, group = Cluster)) +
@@ -783,43 +706,30 @@ ggplot(featDF[featDF$len_3pUTR <= 4000 & featDF$len_3pUTR !=0,], aes(x = Cluster
   theme_bw()
 
 ggbetweenstats( # Group clusters
-  ggtheme = ggthemes::theme_clean(),
+  ggtheme = theme_pubr(), ylab = "3'UTR length",
   data = featDF[featDF$len_3pUTR != 0 & featDF$len_3pUTR <= 4000,],
-  x = Cluster,
-  y = len_3pUTR,
-  notch = TRUE,
-  point.jitter.width = 0.6,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 1,
-  title = "3'UTR length distribution of the 6 MClust clusters") +
+  x = Cluster, y = len_3pUTR,
+  notch = TRUE, point.jitter.width = 0.6,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  #title = "3'UTR length distribution of the 6 MClust clusters",
+  k = 1, results.subtitle = TRUE) +
   ggplot2::scale_color_manual(values = c("#009E73", "#0072B2", "#0072B2", "#D55E00", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
 
 ggbetweenstats( # Group translation
-  ggtheme = ggthemes::theme_clean(),
+  ggtheme = theme_ggstatsplot(), ylab = "3'UTR length",
   data = featDF[featDF$len_3pUTR != 0 & featDF$len_3pUTR <= 4000,],
-  x = Translation,
-  y = len_3pUTR,
-  notch = TRUE,
-  point.jitter.width = 0.4,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 1,
-  title = "3'UTR length distribution of the 3 translation behaviours") +
+  x = Translation, y = len_3pUTR,
+  notch = TRUE, point.jitter.width = 0.4,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  title = "3'UTR length distribution of the 3 translation behaviours",
+  k = 1, results.subtitle = TRUE) +
   ggplot2::scale_color_manual(values =  c("#D55E00", "#0072B2", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
-
 
 # Plot the 3UTR GC boxplots #TODO FIX THE COLUMN NAME
 ggplot(featDF, aes(x = Cluster, y = len_3pUTR.1, fill = Translation, group = Cluster)) +
@@ -834,43 +744,30 @@ ggplot(featDF, aes(x = Cluster, y = len_3pUTR.1, fill = Translation, group = Clu
   theme_bw()
 
 ggbetweenstats( # Group clusters
-  ggtheme = ggthemes::theme_clean(),
+  ggtheme = theme_pubr(), ylab = "3'UTR GC",
   data = featDF[featDF$len_3pUTR.1 != 0,],
-  x = Cluster,
-  y = len_3pUTR.1,
-  notch = TRUE,
-  point.jitter.width = 0.6,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 1,
-  title = "GC 3'UTR distribution of the 6 MClust clusters") +
+  x = Cluster, y = len_3pUTR.1,
+  notch = TRUE, point.jitter.width = 0.6,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  #title = "GC 3'UTR distribution of the 6 MClust clusters",
+  k = 1, results.subtitle = TRUE) +
   ggplot2::scale_color_manual(values = c("#009E73", "#0072B2", "#0072B2", "#D55E00", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
 
 ggbetweenstats( # Group translation
-  ggtheme = ggthemes::theme_clean(),
+  ggtheme = theme_ggstatsplot(), ylab = "3'UTR GC",
   data = featDF[featDF$len_3pUTR.1 != 0,],
-  x = Translation,
-  y = len_3pUTR.1,
-  notch = TRUE,
-  point.jitter.width = 0.4,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 1,
-  title = "GC 3'UTR distribution of the 3 translation behaviours") +
+  x = Translation, y = len_3pUTR.1,
+  notch = TRUE, point.jitter.width = 0.4,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  title = "GC 3'UTR distribution of the 3 translation behaviours",
+  k = 1, results.subtitle = TRUE) +
   ggplot2::scale_color_manual(values =  c("#D55E00", "#0072B2", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
-
 
 # Plot the 3UTR MFE boxplots
 ggplot(featDF, aes(x = Cluster, y = MFE_3pUTR, fill = Translation, group = Cluster)) +
@@ -886,43 +783,30 @@ ggplot(featDF, aes(x = Cluster, y = MFE_3pUTR, fill = Translation, group = Clust
   theme_bw()
 
 ggbetweenstats( # Group clusters
-  ggtheme = ggthemes::theme_clean(),
+  ggtheme = theme_pubr(), ylab = "3'UTR MFE",
   data = featDF[featDF$MFE_3pUTR >= -1500 & featDF$MFE_3pUTR != 0,],
-  x = Cluster,
-  y = MFE_3pUTR,
-  notch = TRUE,
-  point.jitter.width = 0.6,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 1,
-  title = "MFE 3'UTR distribution of the 6 MClust clusters") +
+  x = Cluster, y = MFE_3pUTR,
+  notch = TRUE, point.jitter.width = 0.6,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  #title = "MFE 3'UTR distribution of the 6 MClust clusters",
+  k = 1, results.subtitle = TRUE) +
   ggplot2::scale_color_manual(values = c("#009E73", "#0072B2", "#0072B2", "#D55E00", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
 
 ggbetweenstats( # Group translation
-  ggtheme = ggthemes::theme_clean(),
+  ggtheme = theme_ggstatsplot(), ylab = "3'UTR MFE",
   data = featDF[featDF$MFE_3pUTR >= -1500 & featDF$MFE_3pUTR != 0,],
-  x = Translation,
-  y = MFE_3pUTR,
-  notch = TRUE,
-  point.jitter.width = 0.4,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 1,
-  title = "MFE 3'UTR distribution of the 3 translation behaviours") +
+  x = Translation, y = MFE_3pUTR,
+  notch = TRUE, point.jitter.width = 0.4,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  title = "MFE 3'UTR distribution of the 3 translation behaviours",
+  k = 1, results.subtitle = TRUE) +
   ggplot2::scale_color_manual(values =  c("#D55E00", "#0072B2", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
-
 
 # Plot the 3UTR MFE_BP lengths boxplots
 ggplot(featDF, aes(x = Cluster, y = MfeBP_3pUTR, fill = Translation, group = Cluster)) +
@@ -938,43 +822,30 @@ ggplot(featDF, aes(x = Cluster, y = MfeBP_3pUTR, fill = Translation, group = Clu
   theme_bw()
 
 ggbetweenstats( # Group clusters
-  ggtheme = ggthemes::theme_clean(),
+  ggtheme =theme_pubr(), ylab = "3'UTR MFE/BP",
   data = featDF[featDF$MFE_3pUTR >= -1500 & featDF$MFE_3pUTR != 0,],
-  x = Cluster,
-  y = MfeBP_3pUTR,
-  notch = TRUE,
-  point.jitter.width = 0.6,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 1,
-  title = "MFE per BP 3'UTR distribution of the 6 MClust clusters") +
+  x = Cluster, y = MfeBP_3pUTR,
+  notch = TRUE, point.jitter.width = 0.6,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  #title = "MFE per BP 3'UTR distribution of the 6 MClust clusters",
+  k = 1, results.subtitle = TRUE) +
   ggplot2::scale_color_manual(values = c("#009E73", "#0072B2", "#0072B2", "#D55E00", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
 
 ggbetweenstats( # Group translation
-  ggtheme = ggthemes::theme_clean(),
+  ggtheme = theme_ggstatsplot(), ylab = "3'UTR MFE/BP",
   data = featDF[featDF$MFE_3pUTR >= -1500 & featDF$MFE_3pUTR != 0,],
-  x = Translation,
-  y = MfeBP_3pUTR,
-  notch = TRUE,
-  point.jitter.width = 0.4,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 1,
-  title = "MFE per BP 3'UTR distribution of the 3 translation behaviours") +
+  x = Translation, y = MfeBP_3pUTR,
+  notch = TRUE, point.jitter.width = 0.4,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  title = "MFE per BP 3'UTR distribution of the 3 translation behaviours",
+  k = 1, results.subtitle = TRUE) +
   ggplot2::scale_color_manual(values =  c("#D55E00", "#0072B2", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
-
 
 # Plot the TOP local score boxplots
 ggplot(featDF, aes(x = Cluster, y = TOP_localScore, fill = Translation, group = Cluster)) +
@@ -989,41 +860,29 @@ ggplot(featDF, aes(x = Cluster, y = TOP_localScore, fill = Translation, group = 
   theme_bw()
 
 ggbetweenstats( # Group clusters
-  ggtheme = ggthemes::theme_clean(),
-  data = featDF,
-  x = Cluster,
-  y = TOP_localScore,
-  notch = TRUE,
-  point.jitter.width = 0.6,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 2,
-  title = "TOP local score distribution of the 6 MClust clusters") +
+  ggtheme = theme_pubr(),
+  data = featDF, ylab = "TOP local score",
+  x = Cluster, y = TOP_localScore,
+  notch = TRUE, point.jitter.width = 0.6,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  #title = "TOP local score distribution of the 6 MClust clusters",
+  k = 1, results.subtitle = TRUE) +
   ggplot2::scale_color_manual(values = c("#009E73", "#0072B2", "#0072B2", "#D55E00", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
 
 ggbetweenstats( # Group translation
-  ggtheme = ggthemes::theme_clean(),
-  data = featDF,
-  x = Translation,
-  y = TOP_localScore,
-  notch = TRUE,
-  point.jitter.width = 0.4,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 2,
-  title = "TOP local score distribution of the 3 translation behaviours") +
+  ggtheme = theme_ggstatsplot(),
+  data = featDF, ylab = "TOP local score",
+  x = Translation, y = TOP_localScore,
+  notch = TRUE, point.jitter.width = 0.4,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  title = "TOP local score distribution of the 3 translation behaviours",
+  k = 1, results.subtitle = TRUE) +
   ggplot2::scale_color_manual(values =  c("#D55E00", "#0072B2", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
 
 
@@ -1041,45 +900,33 @@ ggplot(featDF, aes(x = Cluster, y = CAI, fill = Translation, group = Cluster)) +
   theme_bw()
 
 ggbetweenstats( # Group clusters
-  ggtheme = ggthemes::theme_clean(),
-  data = featDF,
-  x = Cluster,
-  y = CAI,
-  notch = TRUE,
-  point.jitter.width = 0.6,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 2,
-  title = "CAI distribution of the 6 MClust clusters") +
+  ggtheme = theme_pubr(),
+  data = featDF, ylab = "CAI",
+  x = Cluster, y = CAI,
+  notch = TRUE, point.jitter.width = 0.6,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  #title = "CAI distribution of the 6 MClust clusters",
+  k = 1, results.subtitle = TRUE) +
   ggplot2::scale_color_manual(values = c("#009E73", "#0072B2", "#0072B2", "#D55E00", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
 
 ggbetweenstats( # Group translation
-  ggtheme = ggthemes::theme_clean(),
-  data = featDF,
-  x = Translation,
-  y = CAI,
-  notch = TRUE,
-  point.jitter.width = 0.4,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 2,
-  title = "CAI distribution of the 3 translation behaviours") +
+  ggtheme = theme_ggstatsplot(),
+  data = featDF, ylab = "CAI",
+  x = Translation, y = CAI,
+  notch = TRUE, point.jitter.width = 0.4,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  title = "CAI distribution of the 3 translation behaviours",
+  k = 1, results.subtitle = TRUE) +
   ggplot2::scale_color_manual(values =  c("#D55E00", "#0072B2", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
 
 
-## Cluster Enrichemnts ------------------------------------
+## Cluster Enrichements ------------------------------------
 # Retrieve the gene names for each cluster from the features data frame.
 genesClust1ENS <- as.vector(subset(featDF, featDF$Cluster == 1)$ensembl_gene_id)
 genesClust2ENS <- as.vector(subset(featDF, featDF$Cluster == 2)$ensembl_gene_id)
