@@ -206,7 +206,6 @@ summary(efT)
 efitTtab <- topTable(efitT, p.value = 0.05, lfc = 0.5, number = "ALL")
 efitTtab$GeneName <- as.vector(mapIds(org.Hs.eg.db, keys = rownames(efitTtab), column = "SYMBOL", keytype = "ENSEMBL", multiVals = "first"))
 write.table(efitTtab, file = "degs_RNAtotal_201911.tab", quote = FALSE, sep = "\t")
-
 plotSA(efitT, main = "SA plot for RNA total L/H")
 tfitT <- treat(vfitT, lfc = log2(1.1))
 ttT <- decideTests(tfitT, p.value = 0.05)
@@ -1328,22 +1327,17 @@ ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = coding_len, fill = diffTran
   theme_bw()
 
 ggbetweenstats( # Group clusters
-  ggtheme = ggthemes::theme_clean(),
-  data = featTranslRatioFC[featTranslRatioFC$coding_len <= 5000,],
-  x = diffTranslRat,
-  y = coding_len,
-  notch = TRUE,
-  point.jitter.width = 0.6,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 1,
-  title = "Coding length distribution of the 3 groups of translation differences.") +
+  ggtheme = theme_pubr(),
+  data = featTranslRatioFC[featTranslRatioFC$coding_len <= 6000,],
+  ylab = "Coding Length", xlab = "H/L glucose translation ratio difference",
+  x = diffTranslRat, y = coding_len,
+  notch = TRUE, point.jitter.width = 0.6,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  #title = "Coding length distribution of the 3 groups of translation differences.",
+  k = 1, results.subtitle = TRUE) +
   ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
 
 
@@ -1360,22 +1354,17 @@ ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = GC, fill = diffTranslRat, g
   theme_bw()
 
 ggbetweenstats( # Group clusters
-  ggtheme = ggthemes::theme_clean(),
+  ggtheme = theme_pubr(),
   data = featTranslRatioFC,
-  x = diffTranslRat,
-  y = GC,
-  notch = TRUE,
-  point.jitter.width = 0.6,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 1,
-  title = "GC content distribution of the 3 groups of translation differences.") +
+  x = diffTranslRat, y = GC,
+  ylab = "GC", xlab = "H/L glucose translation ratio difference",
+  notch = TRUE, point.jitter.width = 0.5,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  #title = "GC content distribution of the 3 groups of translation differences.",
+  k = 1, results.subtitle = TRUE) +
   ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
 
 
@@ -1392,22 +1381,17 @@ ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = X5pUTR_len, fill = diffTran
   theme_bw()
 
 ggbetweenstats( # Group clusters
-  ggtheme = ggthemes::theme_clean(),
+  ggtheme = theme_pubr(),
   data = featTranslRatioFC[featTranslRatioFC$X5pUTR_len <= 1000 & featTranslRatioFC$X5pUTR_len != 0,],
-  x = diffTranslRat,
-  y = X5pUTR_len,
-  notch = TRUE,
-  point.jitter.width = 0.6,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 1,
-  title = "5'UTR length distribution of the 3 groups of translation differences.") +
+  x = diffTranslRat, y = X5pUTR_len,
+  ylab = "5'UTR length", xlab = "H/L glucose translation ratio difference",
+  notch = TRUE, point.jitter.width = 0.6,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  #title = "5'UTR length distribution of the 3 groups of translation differences.",
+  k = 1, results.subtitle = TRUE) +
   ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
 
 
@@ -1423,22 +1407,17 @@ ggplot(featTranslRatioFC[featTranslRatioFC$X5pUTR_GC != 0,], aes(x = diffTranslR
   theme_bw()
 
 ggbetweenstats( # Group clusters
-  ggtheme = ggthemes::theme_clean(),
+  ggtheme = theme_pubr(),
   data = featTranslRatioFC[featTranslRatioFC$X5pUTR_GC != 0,],
-  x = diffTranslRat,
-  y = X5pUTR_GC,
-  notch = TRUE,
-  point.jitter.width = 0.6,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 1,
-  title = "5'UTR GC distribution of the 3 groups of translation differences.") +
+  ylab = "5'UTR GC", xlab = "H/L glucose translation ratio difference",
+  x = diffTranslRat, y = X5pUTR_GC,
+  notch = TRUE, point.jitter.width = 0.6,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  #title = "5'UTR GC distribution of the 3 groups of translation differences.",
+  k = 1, results.subtitle = TRUE) +
   ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
 
 
@@ -1455,22 +1434,17 @@ ggplot(featTranslRatioFC[featTranslRatioFC$X5pUTR_MFE != 0,], aes(x = diffTransl
   theme_bw()
 
 ggbetweenstats( # Group clusters
-  ggtheme = ggthemes::theme_clean(),
+  ggtheme = theme_pubr(),
   data = featTranslRatioFC[featTranslRatioFC$X5pUTR_MFE != 0,],
-  x = diffTranslRat,
-  y = X5pUTR_MFE,
-  notch = TRUE,
-  point.jitter.width = 0.6,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 1,
-  title = "5'UTR MFE distribution of the 3 groups of translation differences.") +
+  ylab = "5'UTR MFE", xlab = "H/L glucose translation ratio difference",
+  x = diffTranslRat, y = X5pUTR_MFE,
+  notch = TRUE, point.jitter.width = 0.6,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  #title = "5'UTR MFE distribution of the 3 groups of translation differences.",
+  k = 1, results.subtitle = TRUE) +
   ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
 
 
@@ -1487,22 +1461,17 @@ ggplot(featTranslRatioFC[featTranslRatioFC$X5pUTR_MfeBP != 0,], aes(x = diffTran
   theme_bw()
 
 ggbetweenstats( # Group clusters
-  ggtheme = ggthemes::theme_clean(),
+  ggtheme = theme_pubr(),
   data = featTranslRatioFC[featTranslRatioFC$X5pUTR_MfeBP != 0,],
-  x = diffTranslRat,
-  y = X5pUTR_MfeBP,
-  notch = TRUE,
-  point.jitter.width = 0.6,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 1,
-  title = "5'UTR MFE per BP distribution of the 3 groups of translation differences.") +
+  ylab = "5'UTR MFE/BP", xlab = "H/L glucose translation ratio difference",
+  x = diffTranslRat, y = X5pUTR_MfeBP,
+  notch = TRUE, point.jitter.width = 0.6,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  #title = "5'UTR MFE per BP distribution of the 3 groups of translation differences.",
+  k = 3) +
   ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
 
 # Plot 3'UTR length boxplots
@@ -1518,22 +1487,17 @@ ggplot(featTranslRatioFC[featTranslRatioFC$X3pUTR_len <= 5000 & featTranslRatioF
   theme_bw()
 
 ggbetweenstats( # Group clusters
-  ggtheme = ggthemes::theme_clean(),
+  ggtheme = theme_pubr(),
   data = featTranslRatioFC[featTranslRatioFC$X3pUTR_len <= 5000 & featTranslRatioFC$X3pUTR_len != 0,],
-  x = diffTranslRat,
-  y = X3pUTR_len,
-  notch = TRUE,
-  point.jitter.width = 0.6,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 1,
-  title = "3'UTR length distribution of the 3 groups of translation differences.") +
+  x = diffTranslRat, y = X3pUTR_len,
+  ylab = "3'UTR length", xlab = "H/L glucose translation ratio difference",
+  notch = TRUE, point.jitter.width = 0.6,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  #title = "3'UTR length distribution of the 3 groups of translation differences.",
+  k = 1) +
   ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
 
 
@@ -1550,22 +1514,17 @@ ggplot(featTranslRatioFC[featTranslRatioFC$X3pUTR_GC != 0,], aes(x = diffTranslR
   theme_bw()
 
 ggbetweenstats( # Group clusters
-  ggtheme = ggthemes::theme_clean(),
+  ggtheme = theme_pubr(),
   data = featTranslRatioFC[featTranslRatioFC$X3pUTR_GC != 0,],
-  x = diffTranslRat,
-  y = X3pUTR_GC,
-  notch = TRUE,
-  point.jitter.width = 0.6,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 1,
-  title = "3'UTR GC distribution of the 3 groups of translation differences.") +
+  ylab = "3'UTR GC", xlab = "H/L glucose translation ratio difference",
+  x = diffTranslRat, y = X3pUTR_GC,
+  notch = TRUE, point.jitter.width = 0.6,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  #title = "3'UTR GC distribution of the 3 groups of translation differences.",
+  k = 1) +
   ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
 
 # Plot 3'UTR MFE boxplots
@@ -1581,22 +1540,17 @@ ggplot(featTranslRatioFC[featTranslRatioFC$X3pUTR_MFE >= -2500 & featTranslRatio
   theme_bw()
 
 ggbetweenstats(
-  ggtheme = ggthemes::theme_clean(),
+  ggtheme = theme_pubr(),
   data = featTranslRatioFC[featTranslRatioFC$X3pUTR_MFE >= -2500 & featTranslRatioFC$X3pUTR_MFE != 0,],
-  x = diffTranslRat,
-  y = X3pUTR_MFE,
-  notch = TRUE,
-  point.jitter.width = 0.6,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 1,
-  title = "3'UTR MFE distribution of the 3 groups of translation differences.") +
+  ylab = "3'UTR MFE", xlab = "H/L glucose translation ratio difference",
+  x = diffTranslRat,y = X3pUTR_MFE,
+  notch = TRUE, point.jitter.width = 0.6,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  #title = "3'UTR MFE distribution of the 3 groups of translation differences.",
+  k = 1) +
   ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
 
 
@@ -1613,22 +1567,17 @@ ggplot(featTranslRatioFC[featTranslRatioFC$X3pUTR_MfeBP != 0,], aes(x = diffTran
   theme_bw()
 
 ggbetweenstats(
-  ggtheme = ggthemes::theme_clean(),
+  ggtheme = theme_pubr(),
   data = featTranslRatioFC[featTranslRatioFC$X3pUTR_MfeBP != 0,],
-  x = diffTranslRat,
-  y = X3pUTR_MfeBP,
-  notch = TRUE,
-  point.jitter.width = 0.6,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 1,
-  title = "3'UTR MFE per BP distribution of the 3 groups of translation differences.") +
+  ylab = "3'UTR MFE/BP", xlab = "H/L glucose translation ratio difference",
+  x = diffTranslRat, y = X3pUTR_MfeBP,
+  notch = TRUE, point.jitter.width = 0.6,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  #title = "3'UTR MFE per BP distribution of the 3 groups of translation differences.",
+  k = 3) +
   ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
 
 
@@ -1645,22 +1594,17 @@ ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = TOP_localScore, fill = diff
   theme_bw()
 
 ggbetweenstats(
-  ggtheme = ggthemes::theme_clean(),
+  ggtheme = theme_pubr(),
   data = featTranslRatioFC,
-  x = diffTranslRat,
-  y = TOP_localScore,
-  notch = TRUE,
-  point.jitter.width = 0.6,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 1,
-  title = "TOP local score distribution of the 3 groups of translation differences.") +
+  ylab = "TOP local score", xlab = "H/L glucose translation ratio difference",
+  x = diffTranslRat, y = TOP_localScore,
+  notch = TRUE, point.jitter.width = 0.6,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  #title = "TOP local score distribution of the 3 groups of translation differences.",
+  k = 1) +
   ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
 
 
@@ -1677,22 +1621,17 @@ ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = CAI, fill = diffTranslRat, 
   theme_bw()
 
 ggbetweenstats(
-  ggtheme = ggthemes::theme_clean(),
+  ggtheme = theme_pubr(),
   data = featTranslRatioFC,
-  x = diffTranslRat,
-  y = CAI,
-  notch = TRUE,
-  point.jitter.width = 0.6,
-  mean.plotting = TRUE,
-  mean.ci = TRUE,
-  mean.label.size = 2.5,
-  mean.color = "blue",
-  mean.size = 1.5,
-  pairwise.comparisons = TRUE,
-  type = "r",
-  p.adjust.method = "BH",
-  k = 1,
-  title = "CAI distribution of the 3 groups of translation differences.") +
+  ylab = "CAI", xlab = "H/L glucose translation ratio difference",
+  x = diffTranslRat, y = CAI,
+  notch = TRUE, point.jitter.width = 0.6,
+  mean.plotting = TRUE, mean.ci = TRUE,
+  mean.label.size = 2.5, mean.color = "blue",
+  mean.size = 1.5, pairwise.comparisons = TRUE,
+  type = "r", p.adjust.method = "BH",
+  #title = "CAI distribution of the 3 groups of translation differences.",
+  k = 3) +
   ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
 
 
