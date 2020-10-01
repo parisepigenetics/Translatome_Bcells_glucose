@@ -165,8 +165,8 @@ plot_semiSupervised_clust <- function(data, k, method, scale = FALSE, title = ""
 }
 
 
-plot_unSupervised_clust <- function(data, method, scale = FALSE, title = "", ...){
-  # Nicely plots a k-means clustering.
+plot_unSupervised_clust <- function(data, method, scale = FALSE, title = TRUE, ...){
+  # Nicely plots a k-means clustering or other unsupervised clustering.
   # Scaling.
   if (scale == TRUE) {
     data <- as.data.frame(scale(data))
@@ -180,15 +180,17 @@ plot_unSupervised_clust <- function(data, method, scale = FALSE, title = "", ...
   dfcall$idsort <- dfcall$id[order(dfcall$cluster)]
   dfcall$idsort <- order(dfcall$idsort)
   # Generate cluster colours.
-  clusterCols <- as.character(sort(clustRes$classification))
+  noClust <- max(clustRes$classification)
+  #clusterCols <- as.character(sort(clustRes$classification))
+  clusterCols <- brewer.pal(n = noClust, name = "Dark2")[as.factor(as.character(sort(clustRes$classification)))]
   # Title
-  if (title == "") {
-    ti = paste(method, " clustering of, ", deparse(substitute(data)), " scale: ", as.character(scale))
+  if (title == TRUE) {
+    ti <- paste(method, " clustering of, ", deparse(substitute(data)), " scale: ", as.character(scale))
   } else {
-    ti = title
+    ti <- NULL
   }
   # Plotting
-  heatmap(as.matrix(data)[order(clustRes$classification),], Rowv = NA, Colv = NA, scale = "none", labRow = NA, cexCol = 1.5, col = my_palette, RowSideColors = clusterCols, ylab = "Genes", main = ti)
+  heatmap(as.matrix(data)[order(clustRes$classification),], Rowv = NA, Colv = NA, scale = "none", labRow = NA, cexCol = 1.75, col = my_palette, RowSideColors = clusterCols, ylab = "Genes", main = ti)
   invisible(list(res = clustRes, df = dfcall))
 }
 
