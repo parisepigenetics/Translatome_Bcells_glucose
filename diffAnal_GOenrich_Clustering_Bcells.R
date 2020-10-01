@@ -26,6 +26,7 @@ library(Factoshiny)
 library(pheatmap)
 library(VennDiagram)
 library(eulerr)
+library(heatmap3)
 
 ## Functions ----------------------------------------------
 # Source functions from the .r file.
@@ -422,18 +423,25 @@ plot_semiSupervised_clust(logRatiosDEG, 4, "pam")
 plot_semiSupervised_clust(logRatiosDEG, 5, "pam")
 fviz_cluster(pam5.res, data = logRatiosDEG, ellipse.type = "convex") + theme_minimal()
 
-# MClust
+# MClust!
 mclust.res <- Mclust(logRatiosDEG)
 fviz_cluster(mclust.res, data = logRatiosDEG, ellipse.type = "convex") + theme_minimal()
 
-### We choose the Mclust method!
-clustRes <- (plot_unSupervised_clust(logRatiosDEG, "Mclust"))
+### We choose the MClust method!
+plot_unSupervised_clust(logRatiosDEG, "Mclust")
+
+# The paper figure.
+par(mar = c(0,0,0,0))
+heatmap.2(as.matrix(logRatiosDEG)[order(mclust.res$classification),], Colv = NA, Rowv = NA, labRow = NA, cexCol = 4, col = my_palette, RowSideColors = brewer.pal(n = 6, name = "Dark2")[as.factor(as.character(sort(mclust.res$classification)))], trace = "none", lwid = c(0.8, 3), lhei = c(0.7, 3), margins = c(9,0), srtCol = 45, key.ylab = "Density", key.xlab = "logOdds", key.title = "")
+#mtext("Genes", side = 4, cex = 2.5, padj = -1.5)
+#mtext(colnames(logRatiosDEG), cex = 2, side = 1, srt = 45, padj = -5)
+legend("bottomleft", legend=c(1:6), fill = brewer.pal(6, "Dark2"), border = brewer.pal(6, "Dark2"), cex = 2.5, bty = "n", y.intersp = 1.7, title = "Cluster")
 
 # TODO 3D interactive plot of the MClust result.
 
 
 ## RNA Features analysis ----------------------------------
-# Prepare the features data frame.
+# Prepare the features data frame.q
 clusterGeneIDs <- clustRes$df["cluster"]
 featuresDF <- read.table("rnaFeat/201905/degs_02052019_ENSEMBL.tab", header = TRUE, sep = "\t")
 # Create a slice with only the numeric values of the data frame.
@@ -1665,44 +1673,78 @@ utr5_matrix_features$trascript_ID <- NULL
 rownames(utr3_matrix_features) <- utr3_matrix_features$trascript_ID
 utr3_matrix_features$trascript_ID <- NULL
 
-
-# 5'UTRs plotting clustering
-# For the 5'UTRs we have a range between 0 and 13 that's why we use 14 colours.
-colours5p <-  c("white", "#C6DBEF", "#4292C6", replicate(3, "#2171B5"), replicate(8, "#08306B"))
-heatmap(as.matrix(utr5_matrix_features), scale = "none", col = colours5p)
-heatmap(as.matrix(utr5_matrix_features[,c(3,8,10)]), scale = "none", col = colours5p, Colv = FALSE)
-# These are the default, make a more decenmt heatmap.
-utr5_matrixPlot <- utr5_matrix_features[,c(3,8,10)]
-utr5_matrixPlot <- utr5_matrixPlot[rowSums(utr5_matrixPlot) != 0,]
-# Add an extra column from the clustering
+# Preprocess add an extra column from the clustering
+utr5_matrixPlot <- utr5_matrix_features
 utr5_matrixPlot$Clust <- 0
 for (t in rownames(utr5_matrixPlot)){
   tt <- subset(featDF, featDF$X == t)
   utr5_matrixPlot[t,]$Clust <- tt$Cluster
 }
-dist5pUTR <- dist(utr5_matrixPlot[,1:3], method = "manhattan")
-clust5pUTR <- hclust(dist5pUTR, method = "ward.D")
+dist5pUTR <- dist(utr5_matrixPlot[,1:3], method = "manhattan")  # Not used!
+clust5pUTR <- hclust(dist5pUTR, method = "ward.D")  # Not used!
 # Add the common gene names instead of ENSEMBLE IDs.
 featDFi <- featDF
 rownames(featDFi) <- featDFi$X
 featDFi$X <- NULL
 utr5_matrixPlot$gene_name <- featDFi[rownames(utr5_matrixPlot), ]$gene_name
 rownames(utr5_matrixPlot) <- utr5_matrixPlot$gene_name
-heatmap.2(as.matrix(utr5_matrixPlot[,1:3]), scale = "none", col = colours5p, Rowv = as.dendrogram(clust5pUTR), Colv = FALSE, trace = "none", key = FALSE,  dendrogram = "row",  margins = c(7, 7), RowSideColors = as.character(utr5_matrixPlot$Clust))
+utr5_matrixPlot$gene_name <- NULL
+
+# For the 5'UTRs we have a range between 0 and 13 that's why we use 14 colours.
+colours5p <-  c("white", "#C6DBEF", "#4292C6", replicate(4, "#2171B5"), replicate(7, "#08306B"))
+# 5'UTRs plotting clustering
+hclust.local <- function(x) hclust(x, method="average")
+par(mar = c(0,0,0,0))
+heatmap.2(as.matrix(utr5_matrixPlot[,!names(utr5_matrixPlot) %in% "Clust"]), scale = "none", col = colours5p, RowSideColors = brewer.pal(n = 6, name = "Dark2")[as.factor(as.character(utr5_matrixPlot$Clust))], margins = c(9, 8), cexRow = 1.2, cexCol = 2.5, hclustfun = hclust.local, trace = "none", lhei = c(0.00001, 4), lwid = c(1, 5), key = FALSE, srtCol = 45)
+legend("topleft", legend=c(1:6), fill= brewer.pal(6, "Dark2"), title = "Clusters", border = brewer.pal(6, "Dark2"), bty = "n", cex = 2, y.intersp = 1.5)
+# Keep the informative part of the clustering
+utr5_matrixPlotI <- utr5_matrixPlot[rowSums(utr5_matrixPlot[,c(10,8,3)] > 0) != 0,][, c(3,8,10,11)]
+hclust.local <- function(x) hclust(x, method="ward.D2")
+par(mar = c(0,0,0,0))
+heatmap.2(as.matrix(utr5_matrixPlotI[,!names(utr5_matrixPlotI) %in% "Clust"]), scale = "none", col = colours5p, trace = "none", RowSideColors = brewer.pal(n = 6, name = "Dark2")[as.factor(as.character(utr5_matrixPlotI$Clust))], hclustfun = hclust.local, key = FALSE, srtCol = 45, margins = c(8, 7), lhei = c(0.00001, 4), lwid = c(1, 5), cexRow = 1.3, cexCol = 4)
+legend("topleft", legend=c(1:6), fill = brewer.pal(6, "Dark2"), border = brewer.pal(6, "Dark2"), cex = 2, bty = "n", y.intersp = 1.5, title = "Cluster")
 
 # Select the clusters of  mRNAs with a uORF
-uorfDF <- data.frame("Cluster" = utr5_matrixPlot[rownames(subset(utr5_matrix_features, utr5_matrix_features$uORF>0)),]$Clust, row.names = rownames(subset(utr5_matrix_features, utr5_matrix_features$uORF>0)))
+uorfDF <- data.frame("Cluster" = utr5_matrixPlot[rownames(subset(utr5_matrixPlot, utr5_matrixPlot$uORF>0)),]$Clust, row.names = rownames(subset(utr5_matrixPlot, utr5_matrixPlot$uORF>0)))
 uorfDF <- uorfDF[order(uorfDF$Cluster, decreasing = TRUE),, drop = FALSE]
 
 
-# 3'UTRs plotting clustering
-# Preprocess the 3'UTR data frame.
-utr3_features_final <- utr3_matrix_features[-c(11, 13, 18, 20)]
+# 3'UTRs scan plotting clustering
+# Preprocess add an extra column from the clustering
+utr3_matrixPlot <- utr3_matrix_features
+utr3_matrixPlot$Clust <- 0
+for (t in rownames(utr3_matrixPlot)){
+  tt <- subset(featDF, featDF$X == t)
+  utr3_matrixPlot[t,]$Clust <- tt$Cluster
+}
+dist3pUTR <- dist(utr3_matrixPlot[,1:3], method = "manhattan")  # Not used
+clust3pUTR <- hclust(dist3pUTR, method = "ward.D")  # Not used
+# Add the common gene names instead of ENSEMBLE IDs.
+featDFi <- featDF
+rownames(featDFi) <- featDFi$X
+featDFi$X <- NULL
+utr3_matrixPlot$gene_name <- featDFi[rownames(utr3_matrixPlot), ]$gene_name
+rownames(utr3_matrixPlot) <- utr3_matrixPlot$gene_name
+utr3_matrixPlot$gene_name <- NULL
+
+# For the 3'UTRs we have a range between 0 and 29 that's why we use 30 colours.
+colours5p <-  c("white", "#C6DBEF", "#4292C6", replicate(3, "#2171B5"), replicate(8, "#08306B"))
+# 5'UTRs plotting clustering
+hclust.local <- function(x) hclust(x, method="ward.D")
+heatmap(as.matrix(utr5_matrixPlot[,!names(utr5_matrixPlot) %in% "Clust"]), scale = "none", col = colours5p, Colv = NA, RowSideColors = brewer.pal(n = 6, name = "Dark2")[as.factor(as.character(utr5_matrixPlot$Clust))], margins = c(7, 7), cexRow = 1.1, cexCol = 1.75, hclustfun = hclust.local)
+legend(x="topleft", legend=c(1:6), fill= brewer.pal(6, "Set2"), title = "Clusters")
+# The informative part of the clustering
+heatmap(as.matrix(utr5_matrixPlot[,!names(utr5_matrixPlot) %in% "Clust"][, c(10,8,3)]), scale = "none", col = colours5p, Colv = NA, RowSideColors = brewer.pal(n = 6, name = "Dark2")[as.factor(as.character(utr5_matrixPlot$Clust))], margins = c(7, 7), hclustfun = hclust.local, cexRow = 1.1, cexCol = 2)  # The order of columns is determined after runing the heatmap with the Colv enabled.
+legend(x="topleft", legend=c(1:6), fill= brewer.pal(6, "Set2"), title = "Clusters")
+
+
+
+utr3_features_final <- utr3_matrix_features[-c(20,1,5,7,9,10,13,17,18,3,15,14)]
 row_sub = apply(utr3_features_final, 1, function(row) any(row != 0 ))
 utr3_features_final <- utr3_features_final[row_sub,]
 colours3p <-  c("white", "#C6DBEF", "#4292C6", "#2171B5", "#08306B")
-heatmap(as.matrix(utr3_features_final), scale = "none", col = colours3p)
-heatmap.2(as.matrix(utr3_features_final[,c(2,4,6,8,11,14,16)]), scale = "none", col = colours3p, Colv = FALSE, dendrogram = "row", trace = "none", key = FALSE, margins = c(7, 7))
+heatmap(as.matrix(utr3_matrix_features), scale = "none", col = colours3p)
+heatmap.2(as.matrix(utr3_features_final[,c(14,11,4,8,16,6,2)]), scale = "none", col = colours3p, Colv = FALSE, dendrogram = "row", trace = "none", key = FALSE, margins = c(7, 7))
 
 #G4 analysis
 G4_genes <- read.table("rna_feat/201904/G4_5UTR_names.txt", header = F, sep = ";")
