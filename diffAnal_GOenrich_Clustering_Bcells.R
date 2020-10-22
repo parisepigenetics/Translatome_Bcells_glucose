@@ -121,7 +121,7 @@ plot(as.dendrogram(hcT))
 fviz_dend(hcT, cex = 1.5, main = "", k =2, k_colors = c("#00AFBB", "#FC4E07"), color_labels_by_k = TRUE, xlab = "Total mRNA samples", ylab = "", sub = "", ggtheme = theme_ggstatsplot())
 
 
-## Differential Expression analysis -----------------------
+## Differential Expression analyses -----------------------
 # Form the design matrices
 designMat_M <- model.matrix(~0+groupsformatrix_M)
 colnames(designMat_M) <- levels(groupsformatrix_M)
@@ -165,7 +165,10 @@ tfitM <- treat(vfitM, lfc = log2(1.1))
 ttM <- decideTests(tfitM)
 summary(ttM)
 
-plotMD(efitM, column = 1, status = efM[,1], main = colnames(efitM)[1],ylim = c( -1.5, 1.5))
+plotMD(efitM, column = 1, status = efM[,1], main = colnames(efitM)[1], ylim = c( -1.5, 1.5))
+# For the manuscript figure.
+par(mar = c(7,6,3,0))
+plotMD(efitM, column = 1, status = efM[,1], ylim = c( -1.5, 1.5),  xlab = "Average log occupancy", ylab= "log Fold-Change", main = "Monosome occupancy on High vs. Low glucose", hl.col = c("lightgreen", "red3"), cex.lab = 2, cex.axis = 2, cex = 2, cex.main = 2, legend = FALSE)
 
 
 ### DiffExp Light ribosomes -------------------------------
@@ -181,7 +184,9 @@ ttL <- decideTests(tfitL)
 summary(ttL)
 
 plotMD(efitL, column = 1, status = efL[,1], main = colnames(efitL)[1], ylim = c( -1.5, 1.5))
-
+# For the manuscript figure.
+par(mar = c(7,6,3,0))
+plotMD(efitL, column = 1, status = efL[,1], ylim = c( -1.5, 1.5), xlab = "Average log occupancy", ylab= "log Fold-Change", main = "Light-polysomes occupancy on High vs. Low glucose", hl.cex = 2,  hl.col = c("lightgreen", "red3"), cex.lab = 2, cex.axis = 2, cex = 2, cex.main = 1.75, legend = FALSE)
 
 ### DiffExp Heavy ribosomes -------------------------------
 vmH <- voom(countsTable_H, designMat_H, plot = TRUE)
@@ -196,6 +201,9 @@ ttH <- decideTests(tfitH)
 summary(ttH)
 
 plotMD(efitH, column = 1, status = efH[,1], main = colnames(efitH)[1],ylim = c( -1.5, 1.5))
+# For the manuscript figure.
+par(mar = c(7,6,3,0))
+plotMD(efitH, column = 1, status = efH[,1], ylim = c( -1.5, 1.5), xlab = "Average log occupancy", ylab= "log Fold-Change", main = "Heavy-polysomes occupancy on High vs. Low glucose", hl.cex = 2,  hl.col = c("lightgreen", "red3"), cex.lab = 2, cex.axis = 2, cex = 2, cex.main = 1.75, legend = FALSE)
 
 
 ### DiffExp Total RNA -------------------------------------
@@ -212,8 +220,12 @@ plotSA(efitT, main = "SA plot for RNA total L/H")
 tfitT <- treat(vfitT, lfc = log2(1.1))
 ttT <- decideTests(tfitT, p.value = 0.05)
 summary(ttT)
-plotMD(efitT, column = 1, status = efT[,1], main = colnames(efitT)[1], ylim = c( -1.5, 1.5))
-plotMD(tfitT, column = 1, status = ttT[,1], main = colnames(tfitT)[1], ylim = c( -1.5, 1.5))
+
+plotMD(efitT, column = 1, status = efT[,1], main = colnames(efitT)[1], ylim = c( -1.1, 1.1))
+plotMD(tfitT, column = 1, status = ttT[,1], main = colnames(tfitT)[1], ylim = c( -1.1, 1.1))
+# For the manuscript figure.
+par(mar = c(7,6,3,0))
+plotMD(efitT, column = 1, status = efT[,1], ylim = c( -1, 1), xlab = "Average log expression", ylab= "log Fold-Change", main = "Total RNA abundance on High vs. Low glucose", hl.cex = 2,  hl.col = c("lightgreen", "red3"), cex.lab = 2, cex.axis = 2, cex = 2, cex.main = 1.75, legend = FALSE)
 
 
 ### Toptables ---------------------------------------------
@@ -368,7 +380,7 @@ barplot(ekegMDGEs, title = "DEGs KEGG modules enrichment")  # Only one "ribosome
 # Enrich REACTOME Pathways
 ekePDEGs <- enrichPathway(gene = genesENTREZ, organism = "human", pvalueCutoff = 0.05)
 barplot(ekePDEGs, showCategory = 30, title = "DEGs REACTOME Pathways enrichment")
-dotplot(ekePDEGs, showCategory = 20, title = "DEGs REACTOME Pathways enrichment")
+dotplot(ekePDEGs, showCategory = 20, font.size = 18)  #, title = "DEGs REACTOME Pathways enrichment")
 
 
 ### Enrichment Visualisation ------------------------------
@@ -570,7 +582,7 @@ tr5pLENp <- ggbetweenstats( # Group translation
   point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
   k = 0, mean.point.args = list(size = 1.5, color = "darkred"),
   pairwise.comparisons = FALSE, results.subtitle = FALSE, sample.size.label = FALSE, mean.plotting = FALSE,  # Set FALSE for the manuscript figure.
-  title = "5'UTR length distributions of the 6 MClust clusters")
+  title = "5'UTR length distributions of the 3 translation behaviours")
 
 # 5'UTR GC boxplots
 ggplot(featDF, aes(x = Cluster, y = GC_5pUTR, fill = Translation, group = Cluster)) +
@@ -605,7 +617,7 @@ tr5pGCp <-  ggbetweenstats( # Group translation
   point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
   k = 1, mean.point.args = list(size = 1.5, color = "darkred"),
   pairwise.comparisons = FALSE, results.subtitle = FALSE, sample.size.label = FALSE, mean.plotting = FALSE,  # Set FALSE for the manuscript figure.
-  title = "5'UTR GC distributions of the 6 MClust clusters")
+  title = "5'UTR GC distributions of the 3 translation behaviours")
 
 # 5'UTR MFE boxplots
 ggplot(featDF, aes(x = Cluster, y = MFE_5pUTR, fill = Translation, group = Cluster)) +
@@ -929,39 +941,39 @@ genesTranslINTER <- as.vector(subset(featDF, featDF$Translation == "Inter")$ense
 #Cluster1
 egoClust1_MF <- enrichGO(gene = genesClust1ENS, OrgDb = org.Hs.eg.db, ont = "MF", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
 barplot(egoClust1_MF, title = "Cluster1 GO enrichment MF", showCategory = 20)
-egoClust1_BP <- enrichGO(gene = genesClust1ENS, OrgDb = org.Hs.eg.db, ont = "BP", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
-barplot(egoClust1_BP, title = "Cluster1 GO BP enrichment", showCategory = 20)
+egoClust1_BP <- enrichGO(gene = genesClust1ENS, OrgDb = org.Hs.eg.db, ont = "BP", pAdjustMethod = "BH", pvalueCutoff = 0.01,   minGSSize = 5, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
+barplot(egoClust1_BP, showCategory = 30, font.size = 16) #title = "Cluster1 GO BP enrichment",
 egoClust1_ALL <- enrichGO(gene = genesClust1ENS, OrgDb = org.Hs.eg.db, ont = "ALL", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", pool = TRUE, readable = TRUE)
 barplot(egoClust1_ALL, title = "Cluster1 ALL GO enrichment", showCategory = 20)
 
 #Cluster6
 egoClust6_MF <- enrichGO(gene = genesClust6ENS, OrgDb = org.Hs.eg.db, ont = "MF", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
 barplot(egoClust6_MF, title = "Cluster6 GO enrichment MF", showCategory = 20)
-egoClust6_BP <- enrichGO(gene = genesClust6ENS, OrgDb = org.Hs.eg.db, ont = "BP", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
-barplot(egoClust6_BP, title = "Cluster6 GO BP enrichment", showCategory = 20)
+egoClust6_BP <- enrichGO(gene = genesClust6ENS, OrgDb = org.Hs.eg.db, ont = "BP", pAdjustMethod = "BH", pvalueCutoff = 0.01, maxGSSize = 1000, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
+barplot(egoClust6_BP, showCategory = 30, font.size = 18)  # title = "Cluster6 GO BP enrichment",
 egoClust6_ALL <- enrichGO(gene = genesClust6ENS, OrgDb = org.Hs.eg.db, ont = "ALL", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", pool = TRUE, readable = TRUE)
 barplot(egoClust6_ALL, title = "Cluster6 ALL GO enrichment", showCategory = 20)
 
 #Cluster4
 egoClust4_MF <- enrichGO(gene = genesClust4ENS, OrgDb = org.Hs.eg.db, ont = "MF", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
 barplot(egoClust4_MF, title = "Cluster4 GO enrichment MF", showCategory = 20)
-egoClust4_BP <- enrichGO(gene = genesClust4ENS, OrgDb = org.Hs.eg.db, ont = "BP", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
-barplot(egoClust4_BP, title = "Cluster4 GO BP enrichment", showCategory = 20)
+egoClust4_BP <- enrichGO(gene = genesClust4ENS, OrgDb = org.Hs.eg.db, ont = "BP", pAdjustMethod = "BH", pvalueCutoff = 0.05, minGSSize = 6, maxGSSize = 1000, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
+barplot(egoClust4_BP, showCategory = 30, font.size = 18)  # title = "Cluster4 GO BP enrichment",
 egoClust4_ALL <- enrichGO(gene = genesClust4ENS, OrgDb = org.Hs.eg.db, ont = "ALL", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", pool = TRUE, readable = TRUE)
 barplot(egoClust4_ALL, title = "Cluster4 ALL GO enrichment", showCategory = 20)
 
 #Cluster5
 egoClust5_MF <- enrichGO(gene = genesClust5ENS, OrgDb = org.Hs.eg.db, ont = "MF", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
 barplot(egoClust5_MF, title = "Cluster5 GO enrichment MF", showCategory = 20)
-egoClust5_BP <- enrichGO(gene = genesClust5ENS, OrgDb = org.Hs.eg.db, ont = "BP", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
-barplot(egoClust5_BP, title = "Cluster5 GO BP enrichment", showCategory = 20)
+egoClust5_BP <- enrichGO(gene = genesClust5ENS, OrgDb = org.Hs.eg.db, ont = "BP", pAdjustMethod = "BH", pvalueCutoff = 0.05, minGSSize = 5, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
+barplot(egoClust5_BP, showCategory = 20, font.size = 14)  # title = "Cluster5 GO BP enrichment",
 egoClust5_ALL <- enrichGO(gene = genesClust5ENS, OrgDb = org.Hs.eg.db, ont = "ALL", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", pool = TRUE, readable = TRUE)
 barplot(egoClust5_ALL, title = "Cluster5 ALL GO enrichment", showCategory = 20)
 
 #Cluster2
 egoClust2_MF <- enrichGO(gene = genesClust2ENS, OrgDb = org.Hs.eg.db, ont = "MF", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
 barplot(egoClust2_MF, title = "Cluster2 GO enrichment MF", showCategory = 20)
-egoClust2_BP <- enrichGO(gene = genesClust2ENS, OrgDb = org.Hs.eg.db, ont = "BP", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
+egoClust2_BP <- enrichGO(gene = genesClust2ENS, OrgDb = org.Hs.eg.db, ont = "BP", pAdjustMethod = "BH", pvalueCutoff = 0.1, minGSSize = 5, maxGSSize = 1000, keyType = "ENSEMBL", readable = TRUE)
 barplot(egoClust2_BP, title = "Cluster2 GO BP enrichment", showCategory = 20)
 egoClust2_ALL <- enrichGO(gene = genesClust2ENS, OrgDb = org.Hs.eg.db, ont = "ALL", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", pool = TRUE, readable = TRUE)
 barplot(egoClust2_ALL, title = "Cluster2 ALL GO enrichment", showCategory = 20)
@@ -969,7 +981,7 @@ barplot(egoClust2_ALL, title = "Cluster2 ALL GO enrichment", showCategory = 20)
 #Cluster3
 egoClust3_MF <- enrichGO(gene = genesClust3ENS, OrgDb = org.Hs.eg.db, ont = "MF", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
 barplot(egoClust3_MF, title = "Cluster3 GO enrichment MF", showCategory = 20)
-egoClust3_BP <- enrichGO(gene = genesClust3ENS, OrgDb = org.Hs.eg.db, ont = "BP", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
+egoClust3_BP <- enrichGO(gene = genesClust3ENS, OrgDb = org.Hs.eg.db, ont = "BP", pAdjustMethod = "BH", pvalueCutoff = 0.1, minGSSize = 5, maxGSSize = 1000, universe = univPPglu, keyType = "ENSEMBL", readable = TRUE)
 barplot(egoClust3_BP, title = "Cluster3 GO BP enrichment", showCategory = 20)
 egoClust3_ALL <- enrichGO(gene = genesClust3ENS, OrgDb = org.Hs.eg.db, ont = "ALL", pAdjustMethod = "BH", pvalueCutoff = 0.05, universe = univPPglu, keyType = "ENSEMBL", pool = TRUE, readable = TRUE)
 barplot(egoClust3_ALL, title = "Cluster3 ALL GO enrichment", showCategory = 20)
@@ -1058,7 +1070,7 @@ write(low_TranslRat, file = "most_Transl_LowGlu.txt")
 high_TranslRat <- rownames(head(tpmTrRat[with(tpmTrRat, order(-HighGlu)),,], n = 200))
 write(high_TranslRat, file = "most_Transl_HighGlu.txt")
 
-# Compare all the most differential translated, the most efficiently tranlated in high and most efficiently tranlated in low genes.
+# Compare all the most differential translated, the most efficiently translated in high and most efficiently translated in low genes.
 translRatios <- list(TranslDiff = diffTransl_genes, TranslRatio_Hi = high_TranslRat, TranslRatio_Low = low_TranslRat)
 plot(euler(translRatios, shape = "ellipse"), quantities = TRUE)
 
@@ -1314,19 +1326,18 @@ ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = coding_len, fill = diffTran
   ggtitle("Coding length distribution of the 3 transl. difference genes sets") +
   theme_bw()
 
-ggbetweenstats( # Group clusters
+ptCDa <- ggbetweenstats( #Group clusters
   ggtheme = theme_pubr(),
   data = featTranslRatioFC[featTranslRatioFC$coding_len <= 6000,],
   ylab = "Coding Length", xlab = "H/L glucose translation ratio difference",
   x = diffTranslRat, y = coding_len,
-  notch = TRUE, point.jitter.width = 0.6,
-  mean.plotting = TRUE, mean.ci = TRUE,
-  mean.label.size = 2.5, mean.color = "blue",
-  mean.size = 1.5, pairwise.comparisons = TRUE,
-  type = "r", p.adjust.method = "BH",
+  notch = TRUE, point.jitter.width = 1,
+  type = "np", conf.level = 0.95, var.equal = FALSE,
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  k = 0, mean.point.args = list(size = 1.5, color = "darkred"),
   #title = "Coding length distribution of the 3 groups of translation differences.",
-  k = 1, results.subtitle = TRUE) +
-  ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE, mean.ci = TRUE) + ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73")) # Set FALSE for the manuscript figure.
+
 
 
 # Plot GC content boxplots
@@ -1341,19 +1352,17 @@ ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = GC, fill = diffTranslRat, g
   ggtitle("GC content distribution of the 3 transl. difference genes sets") +
   theme_bw()
 
-ggbetweenstats( # Group clusters
+ptGCa <- ggbetweenstats( # Group clusters
   ggtheme = theme_pubr(),
   data = featTranslRatioFC,
   x = diffTranslRat, y = GC,
   ylab = "GC", xlab = "H/L glucose translation ratio difference",
-  notch = TRUE, point.jitter.width = 0.5,
-  mean.plotting = TRUE, mean.ci = TRUE,
-  mean.label.size = 2.5, mean.color = "blue",
-  mean.size = 1.5, pairwise.comparisons = TRUE,
-  type = "r", p.adjust.method = "BH",
-  #title = "GC content distribution of the 3 groups of translation differences.",
-  k = 1, results.subtitle = TRUE) +
-  ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
+  notch = TRUE, point.jitter.width = 1,
+  type = "np", conf.level = 0.95, var.equal = FALSE,
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  k = 2, mean.point.args = list(size = 1.5, color = "darkred"),
+  #title = "GC content of the 3 groups of translation differences.",
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE, mean.ci = TRUE) + ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73")) # Set FALSE for the manuscript figure.
 
 
 # Plot 5'UTR length boxplots
@@ -1368,19 +1377,17 @@ ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = X5pUTR_len, fill = diffTran
   ggtitle("5'UTR length distribution of the 3 transl. difference genes sets") +
   theme_bw()
 
-ggbetweenstats( # Group clusters
+pt5plena <- ggbetweenstats( # Group clusters
   ggtheme = theme_pubr(),
   data = featTranslRatioFC[featTranslRatioFC$X5pUTR_len <= 1000 & featTranslRatioFC$X5pUTR_len != 0,],
   x = diffTranslRat, y = X5pUTR_len,
   ylab = "5'UTR length", xlab = "H/L glucose translation ratio difference",
-  notch = TRUE, point.jitter.width = 0.6,
-  mean.plotting = TRUE, mean.ci = TRUE,
-  mean.label.size = 2.5, mean.color = "blue",
-  mean.size = 1.5, pairwise.comparisons = TRUE,
-  type = "r", p.adjust.method = "BH",
-  #title = "5'UTR length distribution of the 3 groups of translation differences.",
-  k = 1, results.subtitle = TRUE) +
-  ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
+  notch = TRUE, point.jitter.width = 1,
+  type = "np", conf.level = 0.95, var.equal = FALSE,
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  k = 0, mean.point.args = list(size = 1.5, color = "darkred"),
+  #title = "5'UTR length of the 3 groups of translation differences.",
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE, mean.ci = TRUE) + ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73")) # Set FALSE for the manuscript figure.
 
 
 # Plot 5'UTR GC boxplots
@@ -1394,19 +1401,17 @@ ggplot(featTranslRatioFC[featTranslRatioFC$X5pUTR_GC != 0,], aes(x = diffTranslR
   ggtitle("5'UTR GC content distribution of the 3 transl. difference genes sets") +
   theme_bw()
 
-ggbetweenstats( # Group clusters
+pt5pGCa <- ggbetweenstats( # Group clusters
   ggtheme = theme_pubr(),
   data = featTranslRatioFC[featTranslRatioFC$X5pUTR_GC != 0,],
   ylab = "5'UTR GC", xlab = "H/L glucose translation ratio difference",
   x = diffTranslRat, y = X5pUTR_GC,
-  notch = TRUE, point.jitter.width = 0.6,
-  mean.plotting = TRUE, mean.ci = TRUE,
-  mean.label.size = 2.5, mean.color = "blue",
-  mean.size = 1.5, pairwise.comparisons = TRUE,
-  type = "r", p.adjust.method = "BH",
-  #title = "5'UTR GC distribution of the 3 groups of translation differences.",
-  k = 1, results.subtitle = TRUE) +
-  ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
+  notch = TRUE, point.jitter.width = 1,
+  type = "np", conf.level = 0.95, var.equal = FALSE,
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  k = 2, mean.point.args = list(size = 1.5, color = "darkred"),
+  #title = "5'UTR GC of the 3 groups of translation differences.",
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE, mean.ci = TRUE) + ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73")) # Set FALSE for the manuscript figure.
 
 
 # Plot 5'UTR MFE boxplots
@@ -1421,19 +1426,17 @@ ggplot(featTranslRatioFC[featTranslRatioFC$X5pUTR_MFE != 0,], aes(x = diffTransl
   ggtitle("5'UTR MFE distribution of the 3 transl. difference genes sets") +
   theme_bw()
 
-ggbetweenstats( # Group clusters
+pt5pMFEa <- ggbetweenstats( # Group clusters
   ggtheme = theme_pubr(),
   data = featTranslRatioFC[featTranslRatioFC$X5pUTR_MFE != 0,],
   ylab = "5'UTR MFE", xlab = "H/L glucose translation ratio difference",
   x = diffTranslRat, y = X5pUTR_MFE,
-  notch = TRUE, point.jitter.width = 0.6,
-  mean.plotting = TRUE, mean.ci = TRUE,
-  mean.label.size = 2.5, mean.color = "blue",
-  mean.size = 1.5, pairwise.comparisons = TRUE,
-  type = "r", p.adjust.method = "BH",
-  #title = "5'UTR MFE distribution of the 3 groups of translation differences.",
-  k = 1, results.subtitle = TRUE) +
-  ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
+  notch = TRUE, point.jitter.width = 1,
+  type = "np", conf.level = 0.95, var.equal = FALSE,
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  k = 0, mean.point.args = list(size = 1.5, color = "darkred"),
+  #title = "5'UTR MFE of the 3 groups of translation differences.",
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE, mean.ci = TRUE) + ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73")) # Set FALSE for the manuscript figure.
 
 
 # Plot 5'UTR MFE per BP boxplots
@@ -1445,22 +1448,21 @@ ggplot(featTranslRatioFC[featTranslRatioFC$X5pUTR_MfeBP != 0,], aes(x = diffTran
   theme(legend.position = "topleft") +
   ylab("5'UTR MFE/BP") +
   xlab("Transl. Groups") +
-  ggtitle("5'UTR MFE/BP distribution of the 3 transl. difference genes sets") +
+  ggtitle("5'UTR MFE/BP of the 3 transl. difference genes sets") +
   theme_bw()
 
-ggbetweenstats( # Group clusters
+pt5pMfeBPa <- ggbetweenstats( # Group clusters
   ggtheme = theme_pubr(),
   data = featTranslRatioFC[featTranslRatioFC$X5pUTR_MfeBP != 0,],
-  ylab = "5'UTR MFE/BP", xlab = "H/L glucose translation ratio difference",
+  ylab = "5'UTR MFE per BP", xlab = "H/L glucose translation ratio difference",
   x = diffTranslRat, y = X5pUTR_MfeBP,
-  notch = TRUE, point.jitter.width = 0.6,
-  mean.plotting = TRUE, mean.ci = TRUE,
-  mean.label.size = 2.5, mean.color = "blue",
-  mean.size = 1.5, pairwise.comparisons = TRUE,
-  type = "r", p.adjust.method = "BH",
-  #title = "5'UTR MFE per BP distribution of the 3 groups of translation differences.",
-  k = 3) +
-  ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
+  notch = TRUE, point.jitter.width = 1,
+  type = "np", conf.level = 0.95, var.equal = FALSE,
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  k = 2, mean.point.args = list(size = 1.5, color = "darkred"),
+  #title = "5'UTR MFE per BP of the 3 groups of translation differences.",
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE, mean.ci = TRUE) + ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73")) # Set FALSE for the manuscript figure.
+
 
 # Plot 3'UTR length boxplots
 ggplot(featTranslRatioFC[featTranslRatioFC$X3pUTR_len <= 5000 & featTranslRatioFC$X3pUTR_len != 0,], aes(x = diffTranslRat, y = X3pUTR_len, fill = diffTranslRat, group = diffTranslRat)) +
@@ -1474,19 +1476,17 @@ ggplot(featTranslRatioFC[featTranslRatioFC$X3pUTR_len <= 5000 & featTranslRatioF
   ggtitle("3'UTR length distribution of the 3 transl. difference genes sets") +
   theme_bw()
 
-ggbetweenstats( # Group clusters
+pt3pLENa <- ggbetweenstats( # Group clusters
   ggtheme = theme_pubr(),
   data = featTranslRatioFC[featTranslRatioFC$X3pUTR_len <= 5000 & featTranslRatioFC$X3pUTR_len != 0,],
   x = diffTranslRat, y = X3pUTR_len,
   ylab = "3'UTR length", xlab = "H/L glucose translation ratio difference",
-  notch = TRUE, point.jitter.width = 0.6,
-  mean.plotting = TRUE, mean.ci = TRUE,
-  mean.label.size = 2.5, mean.color = "blue",
-  mean.size = 1.5, pairwise.comparisons = TRUE,
-  type = "r", p.adjust.method = "BH",
-  #title = "3'UTR length distribution of the 3 groups of translation differences.",
-  k = 1) +
-  ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
+  notch = TRUE, point.jitter.width = 1,
+  type = "np", conf.level = 0.95, var.equal = FALSE,
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  k = 0, mean.point.args = list(size = 1.5, color = "darkred"),
+  #title = "3'UTR length of the 3 groups of translation differences.",
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE, mean.ci = TRUE) + ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73")) # Set FALSE for the manuscript figure.
 
 
 # Plot 3'UTR GC boxplots
@@ -1501,19 +1501,18 @@ ggplot(featTranslRatioFC[featTranslRatioFC$X3pUTR_GC != 0,], aes(x = diffTranslR
   ggtitle("3'UTR GC distribution of the 3 transl. difference genes sets") +
   theme_bw()
 
-ggbetweenstats( # Group clusters
+pt3pGCa <- ggbetweenstats( # Group clusters
   ggtheme = theme_pubr(),
   data = featTranslRatioFC[featTranslRatioFC$X3pUTR_GC != 0,],
   ylab = "3'UTR GC", xlab = "H/L glucose translation ratio difference",
   x = diffTranslRat, y = X3pUTR_GC,
-  notch = TRUE, point.jitter.width = 0.6,
-  mean.plotting = TRUE, mean.ci = TRUE,
-  mean.label.size = 2.5, mean.color = "blue",
-  mean.size = 1.5, pairwise.comparisons = TRUE,
-  type = "r", p.adjust.method = "BH",
-  #title = "3'UTR GC distribution of the 3 groups of translation differences.",
-  k = 1) +
-  ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
+  notch = TRUE, point.jitter.width = 1,
+  type = "np", conf.level = 0.95, var.equal = FALSE,
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  k = 2, mean.point.args = list(size = 1.5, color = "darkred"),
+  #title = "3'UTR GC of the 3 groups of translation differences.",
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE, mean.ci = TRUE) + ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73")) # Set FALSE for the manuscript figure.
+
 
 # Plot 3'UTR MFE boxplots
 ggplot(featTranslRatioFC[featTranslRatioFC$X3pUTR_MFE >= -2500 & featTranslRatioFC$X3pUTR_MFE != 0,], aes(x = diffTranslRat, y = X3pUTR_MFE, fill = diffTranslRat, group = diffTranslRat)) +
@@ -1527,19 +1526,17 @@ ggplot(featTranslRatioFC[featTranslRatioFC$X3pUTR_MFE >= -2500 & featTranslRatio
   ggtitle("3'UTR MFE distribution of the 3 transl. difference genes sets") +
   theme_bw()
 
-ggbetweenstats(
+pt3pMFEa <- ggbetweenstats(
   ggtheme = theme_pubr(),
   data = featTranslRatioFC[featTranslRatioFC$X3pUTR_MFE >= -2500 & featTranslRatioFC$X3pUTR_MFE != 0,],
   ylab = "3'UTR MFE", xlab = "H/L glucose translation ratio difference",
   x = diffTranslRat,y = X3pUTR_MFE,
-  notch = TRUE, point.jitter.width = 0.6,
-  mean.plotting = TRUE, mean.ci = TRUE,
-  mean.label.size = 2.5, mean.color = "blue",
-  mean.size = 1.5, pairwise.comparisons = TRUE,
-  type = "r", p.adjust.method = "BH",
-  #title = "3'UTR MFE distribution of the 3 groups of translation differences.",
-  k = 1) +
-  ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
+  notch = TRUE, point.jitter.width = 1,
+  type = "np", conf.level = 0.95, var.equal = FALSE,
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  k = 0, mean.point.args = list(size = 1.5, color = "darkred"),
+  #title = "3'UTR MFE of the 3 groups of translation differences.",
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE, mean.ci = TRUE) + ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73")) # Set FALSE for the manuscript figure.
 
 
 # Plot 3'UTR MFE/BP boxplots
@@ -1554,19 +1551,17 @@ ggplot(featTranslRatioFC[featTranslRatioFC$X3pUTR_MfeBP != 0,], aes(x = diffTran
   ggtitle("3'UTR MFE/BP distribution of the 3 transl. difference genes sets") +
   theme_bw()
 
-ggbetweenstats(
+pt3pMfeBPa <- ggbetweenstats(
   ggtheme = theme_pubr(),
   data = featTranslRatioFC[featTranslRatioFC$X3pUTR_MfeBP != 0,],
-  ylab = "3'UTR MFE/BP", xlab = "H/L glucose translation ratio difference",
+  ylab = "3'UTR MFE per BP", xlab = "H/L glucose translation ratio difference",
   x = diffTranslRat, y = X3pUTR_MfeBP,
-  notch = TRUE, point.jitter.width = 0.6,
-  mean.plotting = TRUE, mean.ci = TRUE,
-  mean.label.size = 2.5, mean.color = "blue",
-  mean.size = 1.5, pairwise.comparisons = TRUE,
-  type = "r", p.adjust.method = "BH",
-  #title = "3'UTR MFE per BP distribution of the 3 groups of translation differences.",
-  k = 3) +
-  ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
+  notch = TRUE, point.jitter.width = 1,
+  type = "np", conf.level = 0.95, var.equal = FALSE,
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  k = 2, mean.point.args = list(size = 1.5, color = "darkred"),
+  #title = "3'UTR MFE per BP of the 3 groups of translation differences.",
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE, mean.ci = TRUE) + ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73")) # Set FALSE for the manuscript figure.
 
 
 # Plot TOP local score boxplots
@@ -1581,20 +1576,17 @@ ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = TOP_localScore, fill = diff
   ggtitle("TOP local score distribution of the 3 transl. difference genes sets") +
   theme_bw()
 
-ggbetweenstats(
+ptTOPa <- ggbetweenstats(
   ggtheme = theme_pubr(),
   data = featTranslRatioFC,
   ylab = "TOP local score", xlab = "H/L glucose translation ratio difference",
   x = diffTranslRat, y = TOP_localScore,
-  notch = TRUE, point.jitter.width = 0.6,
-  mean.plotting = TRUE, mean.ci = TRUE,
-  mean.label.size = 2.5, mean.color = "blue",
-  mean.size = 1.5, pairwise.comparisons = TRUE,
-  type = "r", p.adjust.method = "BH",
-  #title = "TOP local score distribution of the 3 groups of translation differences.",
-  k = 1) +
-  ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
-
+  notch = TRUE, point.jitter.width = 1,
+  type = "np", conf.level = 0.95, var.equal = FALSE,
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  k = 0, mean.point.args = list(size = 1.5, color = "darkred"),
+  #title = "TOP local score of the 3 groups of translation differences.",
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE, mean.ci = TRUE) + ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73")) # Set FALSE for the manuscript figure.
 
 # Plot CAI boxplots
 ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = CAI, fill = diffTranslRat, group = diffTranslRat)) +
@@ -1608,19 +1600,30 @@ ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = CAI, fill = diffTranslRat, 
   ggtitle("CAI distribution of the 3 transl. difference genes sets") +
   theme_bw()
 
-ggbetweenstats(
+ptCAIa <- ggbetweenstats(
   ggtheme = theme_pubr(),
   data = featTranslRatioFC,
-  ylab = "CAI", xlab = "H/L glucose translation ratio difference",
+  ylab = "C Adaptation Index", xlab = "H/L glucose translation ratio difference",
   x = diffTranslRat, y = CAI,
-  notch = TRUE, point.jitter.width = 0.6,
-  mean.plotting = TRUE, mean.ci = TRUE,
-  mean.label.size = 2.5, mean.color = "blue",
-  mean.size = 1.5, pairwise.comparisons = TRUE,
-  type = "r", p.adjust.method = "BH",
-  #title = "CAI distribution of the 3 groups of translation differences.",
-  k = 3) +
-  ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73"))  #c(wes_palette("Rushmore1")[5], wes_palette("Rushmore1")[2], wes_palette("Rushmore1")[3]))
+  notch = TRUE, point.jitter.width = 1,
+  type = "np", conf.level = 0.95, var.equal = FALSE,
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  k = 3, mean.point.args = list(size = 1.5, color = "darkred"),
+  #title = "CAI of the 3 groups of translation differences.",
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE, mean.ci = TRUE) + ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73")) # Set FALSE for the manuscript figure.
+
+translEffBoxes <- ggarrange(ptCD, ptGC, pt5plen, pt5pGC, pt5pMFE, pt5pMfeBP,
+                            pt3pLEN, pt3pGC, pt3pMFE, pt3pMfeBP, ptTOP, ptCAI,
+                            labels = c("A", "B", "C", "D", "E" ,"F", "G", "H",
+                                       "I", "J", "K", "L"),
+                            ncol = 2, nrow = 6)
+
+translEffBoxesAnal <- ggarrange(ptCDa, ptGCa, pt5plena, pt5pGCa, pt5pMFEa,
+                                pt5pMfeBPa, pt3pLENa, pt3pGCa, pt3pMFEa,
+                                pt3pMfeBPa, ptTOPa, ptCAIa,
+                                labels = c("A", "B", "C", "D", "E" ,"F", "G",
+                                           "H", "I", "J", "K", "L"),
+                                ncol = 2, nrow = 6)
 
 
 ## TOP RNA analysis ---------------------------------------
