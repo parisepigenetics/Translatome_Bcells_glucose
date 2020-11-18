@@ -1690,6 +1690,12 @@ par(mar = c(0,0,0,0))
 heatmap.2(as.matrix(utr5_matrixPlotI[,!names(utr5_matrixPlotI) %in% "Clust"]), scale = "none", col = colours5p, trace = "none", RowSideColors = brewer.pal(n = 6, name = "Dark2")[as.factor(as.character(utr5_matrixPlotI$Clust))], hclustfun = hclust.local, key = FALSE, srtCol = 45, margins = c(8, 7), lhei = c(0.00001, 4), lwid = c(1, 5), cexRow = 1.3, cexCol = 4)
 legend("topleft", legend=c(1:6), fill = brewer.pal(6, "Dark2"), border = brewer.pal(6, "Dark2"), cex = 2, bty = "n", y.intersp = 1.5, title = "Cluster")
 
+# Heatmap based on the model MClust ordering.
+utr5_matrixPlotC <- utr5_matrixPlot[order(utr5_matrixPlot$Clust),]
+heatmap.2(as.matrix(utr5_matrixPlotC[,names(utr5_matrixPlotC) %in% c("IRES", "TOP", "uORF")]), Colv = FALSE, Rowv = FALSE, dendrogram = "none", scale = "none", col = colours5p, RowSideColors = brewer.pal(n = 6, name = "Dark2")[as.factor(as.character(utr5_matrixPlotC$Clust))], margins = c(9, 8), cexRow = 1.2, cexCol = 2.5, trace = "none", lhei = c(0.00001, 4), lwid = c(1, 5), key = FALSE, srtCol = 45)  # NOT informative
+legend("topleft", legend=c(1:6), fill = brewer.pal(6, "Dark2"), border = brewer.pal(6, "Dark2"), cex = 2, bty = "n", y.intersp = 1.5, title = "Cluster")
+
+
 # Select the clusters of  mRNAs with a uORF
 uorfDF <- data.frame("Cluster" = utr5_matrixPlot[rownames(subset(utr5_matrixPlot, utr5_matrixPlot$uORF>0)),]$Clust, row.names = rownames(subset(utr5_matrixPlot, utr5_matrixPlot$uORF>0)))
 uorfDF <- uorfDF[order(uorfDF$Cluster, decreasing = TRUE),, drop = FALSE]
@@ -1737,7 +1743,6 @@ heatmap.2(as.matrix(utr3_matrixPlotI[,!names(utr3_matrixPlotI) %in% "Clust"]), s
 legend("topleft", legend=c(1:6), fill = brewer.pal(6, "Dark2"), border = brewer.pal(6, "Dark2"), cex = 2, bty = "n", y.intersp = 1.5, title = "Cluster")
 
 
-
 utr3_features_final <- utr3_matrix_features[-c(20,1,5,7,9,10,13,17,18,3,15,14)]
 row_sub = apply(utr3_features_final, 1, function(row) any(row != 0 ))
 utr3_features_final <- utr3_features_final[row_sub,]
@@ -1745,20 +1750,19 @@ colours3p <-  c("white", "#C6DBEF", "#4292C6", "#2171B5", "#08306B")
 heatmap(as.matrix(utr3_matrix_features), scale = "none", col = colours3p)
 heatmap.2(as.matrix(utr3_features_final[,c(14,11,4,8,16,6,2)]), scale = "none", col = colours3p, Colv = FALSE, dendrogram = "row", trace = "none", key = FALSE, margins = c(7, 7))
 
+
 #G4 analysis
 G4_genes <- read.table("rna_feat/201904/G4_5UTR_names.txt", header = F, sep = ";")
 G4_unique <- unique(G4_genes$V1)
 degs_g4_names <- intersect(G4_unique, degs)
 G4_names_cluster <- clusterGeneIDs[degs_g4_names,, drop = FALSE]
-hist(G4_names_cluster,nclass = 50)
-
+hist(G4_names_cluster$cluster, nclass = 50)
 
 freq_g4_cluster <- as.data.frame((table(G4_names_cluster$cluster)))
 freq_cluster <- as.data.frame((table(clusterGeneIDs$cluster)))
 
 freq_cluster_g4cluster <- cbind(freq_cluster, freq_g4_cluster$Freq)
 colnames(freq_cluster_g4cluster) <- c("ClusterID","Size","G4_size")
-
 
 freq_cluster_g4cluster <- freq_cluster_g4cluster %>% mutate(Percentage = (G4_size/Size)*100)
 hist(freq_cluster_g4cluster$Percentage,nclass = 25)
@@ -1767,6 +1771,10 @@ translation <- c("Up","Inter","Inter", "Down", "Down", "Up")
 freq_cluster_g4cluster$translation <- translation
 
 ggplot(freq_cluster_g4cluster, aes(x = ClusterID, y = Percentage, fill = translation, group = ClusterID)) +
-  geom_bar(stat = "identity", alpha = 0.6) +
-  theme_minimal() +
-  ggtitle("Percentrage of G-quadruplex genes of the 6 Mclust clusters")
+  geom_bar(stat = "identity", alpha = 0.9) +
+  theme_pubr() +
+  scale_fill_brewer(palette="Dark2") +
+  theme(text = element_text(size = 22)) +
+  xlab("Cluster ID")
+  #+ ggtitle("Percentrage of G-quadruplex genes of the 6 Mclust clusters")
+
