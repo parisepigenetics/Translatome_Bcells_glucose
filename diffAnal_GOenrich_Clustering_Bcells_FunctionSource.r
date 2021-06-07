@@ -1,4 +1,4 @@
-# Source file with usefull finctions for the diffAnal_EnrichAnal_ClustAnal of the Beta-cells polysome profile.
+# Source file with useful functions for the diffAnal, EnrichAnal and ClustAnal of the Beta-cells polysome profile.
 # cbouyio, May 2019, UMR 7216
 
 # Processing functions ----------------
