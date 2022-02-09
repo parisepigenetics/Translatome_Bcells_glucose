@@ -1,18 +1,26 @@
-# Source file with useful functions for the diffAnal, EnrichAnal and ClustAnal of the Beta-cells polysome profile.
+# Source file with useful functions for the diffAnal, EnrichAnal and ClustAnal of the Beta-cells polysome profile
 # cbouyio, May 2019, UMR 7216
 
-# Processing functions ----------------
+# Libraries
+library(mclust)
+library(tidyverse)
+library(ggplot2)
+library(RColorBrewer)
 
+# Global variables
+my_palette <- brewer.pal(n = 11, name = "RdYlGn")
+
+
+# Processing functions ----------------
 discretise <- function(x, t) {
-  # Low level function to return a 3 level discretisation.
+  # Low level function to return a 3 level discretisation
   if (x <= -t) return(-1)
   else if (x >= t) return(1)
   else return(0)
 }
 
-
 discretiseList <- function(v, thres, fc = 1, ...) {
-  # Low level function which discretises a list, either by a 'hard' threshold, or by MAD.
+  # Low level function which discretises a list, either by a 'hard' threshold, or by MAD
   med <- median(v)
   md <- mad(v)
   #med = mean(v)
@@ -25,23 +33,39 @@ discretiseList <- function(v, thres, fc = 1, ...) {
   return(sapply(v, FUN = discretise, t = thres2, ...))
 }
 
-
 discretiseMatrix <- function(df, ...){
-  # Function to discretise a matrix.
+  # Function to discretise a data.frame
   ll <- apply(df, 2, FUN = discretiseList, ...)
   return(as.data.frame(ll))
 }
 
+export_cytoscape <- function(m, filename, ...) {
+  # Function to export a correlation matrix 'm' to a cytoscape network file
+  # m: correlation matrix
+  fn <- filename
+  write("from\tto\tedgeWeight\tsign", file = fn)
+  for (i in 1:nrow(m)) {
+    for (j in i:ncol(m)) {
+      if (m[i,j] != 0.0) {
+        write(sprintf("%s\t%s\t%f\t%s", colnames(m)[i], rownames(m)[j], abs(m[i,j]), sign(m[i,j])), file = fn, append = TRUE)
+      }
+    }
+  }
+}
+
 
 # Filtering functions -----------------
+remove_all_zeros <- function(df, ...){
+  # Function to remove rows that contain nothing but zeros in a data frame
+  return(df[rowSums(df[])>0,])
+}
 
 filter_low_counts <- function(gem, exps, g = 1, t = 5, ...){
-  # Function to filter out lowly expressed (i.e. counts) genes.
-  # gem: Gene Expression Matrix. A data frame with the conditions as columns and the gene expression profiles as rows.
-  # exps: Experiments. A factor specifying the grouping of experiments. MUST have lenght of the colnames of gem and MUST specify the different levels (i.e. treatments) of the data.
-  # g: Groups. The number of groups which we ask to have more that the threshold reads.
-  # t: Counts threshold. A threshold of counts that all the replicates in the specified number of groups must be above.
-  fDF <- data.frame()
+  # Function to filter out lowly expressed (i.e. counts) genes
+  # gem  : Gene Expression Matrix. A data frame with the conditions as columns and the gene expression profiles as rows.
+  # exps : Experiments. A factor specifying the grouping of experiments. MUST have length the number of columns of gem and MUST specify the different levels (i.e. treatments) of the data.
+  # g    : Groups. The number of groups which we ask to have more that the threshold reads.
+  # t    : Counts threshold. A threshold of counts that all the replicates in the specified number of groups must be above.
   rows <- vector()
   # THIS is the vector of number of replicates per experiment.
   nR <- tabulate(exps)
@@ -51,22 +75,17 @@ filter_low_counts <- function(gem, exps, g = 1, t = 5, ...){
     agT <- aggregate(row~exps, FUN = function(v){return(sum(v >= t))})$row
     # This condition is checking for the counts to be higher than the threshold t, in at least g experiments.
     if ( sum(agT == nR) >= g ) {
-      fDF <- rbind(fDF, row)
       rows <- append(rows, rownames(gem)[i])
     }
   }
-  colnames(fDF) <- colnames(gem)
-  rownames(fDF) <- rows
-  return(fDF)
+  return(gem[rows, ])
 }
 
-
 filter_noisy_counts <- function(gem, exps, c = 0.5, ...){
-  # Function to filter out lowly expressed (i.e. counts) genes.
-  # gem: Gene Expression Matrix. A data frame with the conditions as columns and the gene expression profiles as rows.
-  # exps: Experiments. A factor specifying the grouping of experiments. MUST have lenght of the colnames of gem and MUST specify the different levels (i.e. treatments) of the data.
-  # c: Coefficient of variation threshold.
-  fDF <- data.frame()
+  # Function to filter out lowly expressed (i.e. counts) genes
+  # gem  : Gene Expression Matrix. A data frame with the conditions as columns and the gene expression profiles as rows.
+  # exps : Experiments. A factor specifying the grouping of experiments. MUST have lenght of the colnames of gem and MUST specify the different levels (i.e. treatments) of the data.
+  # c    : Coefficient of variation threshold.
   rows <- vector()
   for (i in 1:nrow(gem)) {
     row <- as.numeric(gem[i,])
@@ -77,24 +96,19 @@ filter_noisy_counts <- function(gem, exps, c = 0.5, ...){
     lg <- length(levels(exps))
     # Condition to filter all genes whose coefficient of variation is more than c in at least one experiment.
     if (sum(cvs <= c) == lg) {
-      fDF <- rbind(fDF, row)
       rows <- append(rows, rownames(gem)[i])
     }
   }
-  colnames(fDF) <- colnames(gem)
-  rownames(fDF) <- rows
-  return(fDF)
+  return(gem[rows, ])
 }
 
-
 filter_low_expression <- function(e, groups, thres = 3, samples = 1, coefVar = 0.5, ...){
-  # Function to filter lowly expressed genes.
-  # e      : raw counts data.frame (or cpm, or tpm matrix).
-  # groups : factor designating the grouping(s) (conditions, treatments etc.) it MUST be of equal length to the columns of e and its levels must represent the different groups (conditions).
-  # thres  : the threshold of the *mean* between groups.
-  # samples: the minimum number of groups (i.e. conditions) that we want the mean to be higher than the threshold 'thres'.
-  # coefVar: The coefficient of variation threshold, within replicates, used to remove "noisily" measured genes.
-  filteredDF <- data.frame()
+  # Function to filter lowly expressed genes
+  # e       : raw counts data.frame (or cpm, or tpm matrix).
+  # groups  : factor designating the grouping(s) (conditions, treatments etc.) it MUST be of equal length to the columns of e and its levels must represent the different groups (conditions).
+  # thres   : the threshold of the *mean* expression whithin a group.
+  # samples : the minimum number of groups (i.e. conditions) that we want the mean to be higher than the threshold 'thres'.
+  # coefVar : The coefficient of variation threshold, within replicates, used to remove "noisily" measured genes.
   rows <- vector()
   for (i in 1:nrow(e)) {
     row <- as.numeric(e[i,])
@@ -104,30 +118,25 @@ filter_low_expression <- function(e, groups, thres = 3, samples = 1, coefVar = 0
     lg <- length(levels(groups))
     # This condition filters for "noisy" genes AND for lowly expressed genes.
     if ( (sum(cvs <= coefVar) == lg) & (sum(means >= thres) >= samples) ) { # The first part of this condition checks for the coefficient of variability in ALL groups by grouping sums in the number of samples and the second part is checking for the experimental threshold we specify.
-      filteredDF <- rbind(filteredDF, row)
       rows <- append(rows, rownames(e)[i])
     }
   }
-  colnames(filteredDF) <- colnames(e)
-  rownames(filteredDF) <- rows
-  return(filteredDF)
+  return(e[rows,])
 }
 
 
 ## Ploting functions ------------------
-
 plotMatrixBoxplot <- function(df, ...) {
-  # Function that plots a violin - jitter plot of a numeric matrix.
+  # Function that plots a violin - jitter plot of a numeric matrix
   dff <- df %>% rownames_to_column(var = "GeneID") %>% gather(Experiment, LogFC, -GeneID, factor_key = TRUE)
   p <- ggplot(dff, aes(x = Experiment, y = LogFC, color = Experiment)) + geom_violin(trim = FALSE) + geom_jitter(aes(alpha = 0.5), position = position_jitter(0.25)) + stat_summary(fun.data= mean_sdl, geom = "pointrange", color = "dimgrey", size = 1) + stat_summary(fun.y = median, geom = "point", shape = 95, size = 10, color = "black") + scale_color_brewer(palette = "Dark2") + theme_linedraw()
   return(p)
 }
 
-
 geneBoxplotCond <- function(matrix, name, experiments, treatments, jit_width = 0.1, point_size = 2, ...){
-  # Function to plot expression of individual gene.
-  # Experiment: are the different fractions.
-  # Treatment: is High or Low glucose.
+  # Function to plot expression of individual gene
+  # Experiment : are the different fractions.
+  # Treatment  : is High or Low glucose.
   ge <- data.frame(t(matrix[name,]));
   ge$exp <- experiments;
   ge$treat <- treatments;
@@ -136,9 +145,8 @@ geneBoxplotCond <- function(matrix, name, experiments, treatments, jit_width = 0
   p + geom_jitter(aes(color = treat), width = jit_width, size = point_size) + ggtitle(name);
 }
 
-
 plot_semiSupervised_clust <- function(data, k, method, scale = FALSE, title = "", ...){
-  # Nicely plots a k-means clustering.
+  # Nicely plots a k-means clustering
   # Scaling.
   if (scale == TRUE) {
     data <- as.data.frame(scale(data))
@@ -160,13 +168,12 @@ plot_semiSupervised_clust <- function(data, k, method, scale = FALSE, title = ""
     ti = title
   }
   # Plotting
-  heatmap(as.matrix(data)[order(clustRes$cluster),], Rowv = NA, Colv = NA, scale = "none", labRow = NA, cexCol = 1.5, col = my_palette, RowSideColors = clusterCols, ylab = "Genes", main = ti)
+  heatmap(as.matrix(data)[order(clustRes$cluster),], Rowv = NA, Colv = NA, scale = "none", labRow = NA, cexCol = 0.75, col = my_palette, RowSideColors = clusterCols, ylab = "Genes", main = ti)
   invisible(list(res = clustRes, df = dfcall))
 }
 
-
 plot_unSupervised_clust <- function(data, method, scale = FALSE, title = TRUE, ...){
-  # Nicely plots a k-means clustering or other unsupervised clustering.
+  # Nicely plots a k-means clustering or other unsupervised clustering
   # Scaling.
   if (scale == TRUE) {
     data <- as.data.frame(scale(data))
@@ -190,12 +197,12 @@ plot_unSupervised_clust <- function(data, method, scale = FALSE, title = TRUE, .
     ti <- NULL
   }
   # Plotting
-  heatmap(as.matrix(data)[order(clustRes$classification),], Rowv = NA, Colv = NA, scale = "none", labRow = NA, cexCol = 1.75, col = my_palette, RowSideColors = clusterCols, ylab = "Genes", main = ti)
+  heatmap(as.matrix(data)[order(clustRes$classification),], scale = "none", cexCol = 1, col = my_palette, RowSideColors = clusterCols, main = ti, cexRow = 1.5)
   invisible(list(res = clustRes, df = dfcall))
 }
 
 
-# Low levwel function to add counts on a boxplot.
+# Low level function to add counts on a boxplot.
 n_fun <- function(x){
   return(data.frame(y = max(x), label = length(x)))
 }
