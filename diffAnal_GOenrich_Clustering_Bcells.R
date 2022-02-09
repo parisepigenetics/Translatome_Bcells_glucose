@@ -28,6 +28,7 @@ library(VennDiagram)
 library(eulerr)
 library(heatmap3)
 library(ggpubr)
+library(GGally)
 
 ## Functions ----------------------------------------------
 # Source functions from the .r file.
@@ -388,6 +389,14 @@ dotplot(ekePDEGs, showCategory = 20, font.size = 18)  #, title = "DEGs REACTOME 
 cnetplot(egoDEGs_MF, foldChange = geneListENS, colorEdge = TRUE, showCategory = 10) + ggtitle("CNETplot GOenrich DEGs MF")
 cnetplot(egoDEGs_BP, foldChange = geneListENS, colorEdge = TRUE, showCategory = 10) + ggtitle("CNETplot GOenrich DEGs BP")
 cnetplot(egoDEGs_ALL, foldChange = geneListENS, colorEdge = TRUE, showCategory = 10) + ggtitle("CNETplot GOenrich DEGs ALL")
+# Paper figure 2A
+egoDEGs_MF_paper <- egoDEGs_MF
+egoDEGs_MF_paper@result <- egoDEGs_MF@result[-c(2, 9),]  # Remove two redundant categories
+cnetplot(egoDEGs_MF_paper, foldChange = geneListENS, colorEdge = TRUE, showCategory = 8,cex_category =2, cex_label_category = 1.5, cex_gene =0.75, shadowtext= 'category')
+# Paper figure 2B
+egoDEGs_BP_paper <- egoDEGs_BP
+egoDEGs_BP_paper@result <- egoDEGs_BP@result[-c(1,2,5,6),]  # remove 4 redundant categories
+cnetplot(egoDEGs_BP_paper, foldChange = geneListENS, colorEdge = TRUE, showCategory = 6, cex_category = 1.5, cex_label_category = 1.4, cex_gene = 0.5, cex_label_gene = 1, shadowtext= 'category')
 
 cnetplot(egogsDEGs_MF, foldChange = geneListSYMB, colorEdge = TRUE, showCategory = 10) + ggtitle("CNETplot GOgsea DEGs MF")
 cnetplot(egogsDEGs_BP, foldChange = geneListSYMB, colorEdge = TRUE, showCategory = 10) + ggtitle("CNETplot GOgsea DEGs BP")
@@ -402,10 +411,10 @@ my_palette <- brewer.pal(n = 11, name = "RdYlGn")
 ### Hierarchical Clustering -------------------------------
 # Clustering.
 hc_S <- hclust(dist(logRatiosDEG), method = "single")
-# define clusters (hard thresold)
+# define clusters (hard threshold)
 hc_S_Cls <- cutree(hc_S, h = max(hc_S$height/4))
 # Colour vector for clusters side bar.
-myCols_hc_S <- rainbow(length(unique(hc_S_Cls)))
+myCols_hc_S <- rainbow(length(unique(hc_S_Cls)))mclust
 myClusts_hc_S <- myCols_hc_S[hc_S_Cls]
 heatmap.2(as.matrix(logRatiosDEG), main = "DEGs logRatio H/L HClust Single",  Rowv = as.dendrogram(hc_S), Colv = FALSE, dendrogram = "row", col = my_palette, cexCol = 1.5, cexRow = 0.5, key.title = NA, keysize = 0.8, key.xlab = NA, ylab = "Genes", RowSideColors = myClusts_hc_S)
 
@@ -478,451 +487,448 @@ for (r in row.names(featDF)) {
   if (featDF[r,]$Cluster %in% c(2,3)) featDF[r,]$Translation <- "Inter"
 }
 
+# Features correlations
+
+
 ## BOXPLOTS ---------
 
 # Coding length boxplots
-ggplot(featDF[featDF$coding_len <= 4000,], aes(x = Cluster, y = coding_len, fill = Translation, group = Cluster)) +
-  #coord_cartesian(ylim = c(0, 4000)) + # BETTER put the triming on the DF level above.
-  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
-  geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
-  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill") +
-  #stat_compare_means(comparisons = list(c(1, 2), c(1, 3), c(1, 4), c(1, 5), c(6, 2), c(6, 3), c(6, 4), c(6, 5), c(2, 4), c(3, 5)), method = "t.test", tip.length = 0, hide.ns = TRUE, size = 2.5) +
-  theme(legend.position = "topleft") +
+clCD <- ggplot(featDF[featDF$coding_len <= 4000,], aes(x = Cluster, y = coding_len, fill = Cluster)) + theme_pubr() + scale_fill_brewer(palette="Dark2") +
+  #ggtitle("Coding length distributions of the 6 MClust clusters")
+  geom_boxplot(varwidth = TRUE, alpha = 0.5, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(alpha=0.4,  shape = 16, color = "grey2", position = position_jitter(width = 0.1, height = 0)) +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
-  ylab("Coding Length") + xlab("Clusters") +
-  ggtitle("Coding length distributions of the 6 MClust clusters") +
-  theme_bw()
+  theme(legend.position = "none", axis.title.x=element_blank()) +
+  ylab("Coding Length") + xlab("Clusters")
+  #stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill") +
+  #stat_compare_means(comparisons = list(c(1, 2), c(1, 3), c(1, 4), c(1, 5), c(6, 2), c(6, 3), c(6, 4), c(6, 5), c(2, 4), c(3, 5)), method = "t.test", tip.length = 0, hide.ns = TRUE, size = 2.5)
 
-clCDp <- ggbetweenstats( # Group clusters
+clCDa <- ggbetweenstats( # Group clusters
   ggtheme = theme_pubr(), ylab = "Coding Length",
   data = featDF[featDF$coding_len <= 4000,],  # Select the ones less than 4000.
   x = Cluster, y = coding_len,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 0, mean.point.args = list(size = 1.5, color = "darkred"),
-  pairwise.comparisons = FALSE, results.subtitle = FALSE, sample.size.label = FALSE, mean.plotting = FALSE,  # Set FALSE for the manuscript figure.
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE,  # Set FALSE for the manuscript figure.
   title = "Coding length distributions of the 6 MClust clusters")
 
-trCDp <- ggbetweenstats( # Group translation
-  ggtheme = theme_ggstatsplot(), ylab = "Coding Length",
+trCDa <- ggbetweenstats( # Group translation
+  ggtheme = theme_ggstatsplot(), ylab = "Coding Length", xlab = "",
   data = featDF[featDF$coding_len <= 4000,],
   x = Translation, y = coding_len,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 0, mean.point.args = list(size = 1.5, color = "darkred"),
-  pairwise.comparisons = FALSE, results.subtitle = FALSE, sample.size.label = FALSE, mean.plotting = FALSE,  # Set FALSE for the manuscript figure.
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE,  # Set FALSE for the manuscript figure.
   title = "Coding length distributions of the 3 translation behaviours")
 
 # GC content boxplots
-ggplot(featDF, aes(x = Cluster, y = GC, fill = Translation, group = Cluster)) +
-  coord_cartesian(ylim = c(30, 80)) +
-  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
-  geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
-  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "dodge") +
-  theme(legend.position = "topleft") +
+clGC <- ggplot(featDF, aes(x = Cluster, y = GC, fill = Cluster)) + theme_pubr() +
+  scale_fill_brewer(palette="Dark2") +
+  coord_cartesian(ylim = c(30, 75)) +
+  #ggtitle("Transcript GC content distributions of the 6 Mclust clusters") +
+  geom_boxplot(varwidth = TRUE, alpha = 0.5, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(alpha=0.4,  shape = 16, color = "grey2", position = position_jitter(width = 0.1, height = 0)) +
+  theme(legend.position = "none", axis.title.x=element_blank()) +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
-  ylab("GC") + xlab("Clusters") +
-  ggtitle("Transcript GC content distributions of the 6 Mclust clusters") +
-  theme_bw()
+  ylab("GC") + xlab("Clusters")
+  #stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill") +
+  #stat_compare_means(comparisons = list(c(1, 2), c(1, 3), c(1, 4), c(1, 5), c(6, 2), c(6, 3), c(6, 4), c(6, 5), c(2, 4), c(3, 5)), method = "t.test", tip.length = 0, hide.ns = TRUE, size = 2.5)
 
-clGCp <- ggbetweenstats( # Group clusters
+clGCa <- ggbetweenstats( # Group clusters
   ggtheme = theme_pubr(),
   data = featDF, ylab = "GC",
   x = Cluster, y = GC,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 1, mean.point.args = list(size = 1.5, color = "darkred"),
-  pairwise.comparisons = FALSE, results.subtitle = FALSE, sample.size.label = FALSE, mean.plotting = FALSE,  # Set FALSE for the manuscript figure.
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE,  # Set FALSE for the manuscript figure.
   title = "GC content distributions of the 6 MClust clusters")
 
-trGCp <- ggbetweenstats( # Group translation
+trGCa <- ggbetweenstats( # Group translation
   ggtheme = theme_ggstatsplot(),
   data = featDF[featDF$coding_len <= 4000,], ylab = "GC",
   x = Translation, y = GC,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 1, mean.point.args = list(size = 1.5, color = "darkred"),
-  pairwise.comparisons = FALSE, results.subtitle = FALSE, sample.size.label = FALSE, mean.plotting = FALSE,  # Set FALSE for the manuscript figure.
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE,  # Set FALSE for the manuscript figure.
   title = "GC content distributions of the 3 translation behaviours")
 
 # 5'UTR length boxplots
-ggplot(featDF[featDF$len_5pUTR <= 1000,], aes(x = Cluster, y = len_5pUTR, fill = Translation, group = Cluster)) +
-  #coord_cartesian(ylim = c(0, 1000)) +
-  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
-  geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
-  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill") +
-  theme(legend.position = "topleft") +
+cl5pLEN <- ggplot(featDF[featDF$len_5pUTR <= 800 & featDF$len_5pUTR != 0,], aes(x = Cluster, y = len_5pUTR, fill = Cluster)) + theme_pubr() +
+  scale_fill_brewer(palette="Dark2") +
+  #ggtitle("5'UTR length distributions of the 6 Mclust cluster") +
+  geom_boxplot(varwidth = TRUE, alpha = 0.5, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(alpha=0.4,  shape = 16, color = "grey2", position = position_jitter(width = 0.1, height = 0)) +
+  theme(legend.position = "none", axis.title.x=element_blank()) +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
-  ylab("5'UTR Length") +
-  xlab("Cluster") +
-  ggtitle("5'UTR length distributions of the 6 Mclust clusters") +
-  theme_bw()
+  ylab("5'UTR length") + xlab("Clusters")
+#stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill") +
+#stat_compare_means(comparisons = list(c(1, 2), c(1, 3), c(1, 4), c(1, 5), c(6, 2), c(6, 3), c(6, 4), c(6, 5), c(2, 4), c(3, 5)), method = "t.test", tip.length = 0, hide.ns = TRUE, size = 2.5)
 
-cl5pLENp <- ggbetweenstats( # Group clusters
+cl5pLENa <- ggbetweenstats( # Group clusters
   ggtheme = theme_pubr(),
   data = featDF[featDF$len_5pUTR <= 1000,], ylab = "5'UTR length",
   x = Cluster, y = len_5pUTR,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 0, mean.point.args = list(size = 1.5, color = "darkred"),
-  pairwise.comparisons = FALSE, results.subtitle = FALSE, sample.size.label = FALSE, mean.plotting = FALSE,  # Set FALSE for the manuscript figure.
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE,  # Set FALSE for the manuscript figure.
   title = "5'UTR length distributions of the 6 MClust clusters")
 
-tr5pLENp <- ggbetweenstats( # Group translation
+tr5pLENa <- ggbetweenstats( # Group translation
   ggtheme = theme_ggstatsplot(),
   data = featDF[featDF$len_5pUTR <= 1000,], ylab = "5'UTR length",
   x = Translation, y = len_5pUTR,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 0, mean.point.args = list(size = 1.5, color = "darkred"),
-  pairwise.comparisons = FALSE, results.subtitle = FALSE, sample.size.label = FALSE, mean.plotting = FALSE,  # Set FALSE for the manuscript figure.
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE,  # Set FALSE for the manuscript figure.
   title = "5'UTR length distributions of the 3 translation behaviours")
 
 # 5'UTR GC boxplots
-ggplot(featDF, aes(x = Cluster, y = GC_5pUTR, fill = Translation, group = Cluster)) +
-  coord_cartesian(ylim = c(35, 100)) +
-  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
-  geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
-  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "dodge") +
-  theme(legend.position = "topleft") +
+cl5pGC <- ggplot(featDF[featDF$len_5pUTR != 0,], aes(x = Cluster, y = GC_5pUTR, fill = Cluster)) + theme_pubr() +
+  scale_fill_brewer(palette="Dark2") +
+  #ggtitle("5'UTR GC distributions of the 6 Mclust cluster") +
+  geom_boxplot(varwidth = TRUE, alpha = 0.5, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(alpha=0.4,  shape = 16, color = "grey2", position = position_jitter(width = 0.1, height = 0)) +
+  theme(legend.position = "none", axis.title.x=element_blank()) +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
-  ylab("5'UTR GC") +
-  xlab("Cluster") +
-  ggtitle("5'UTR GC distributions of the 6 Mclust clusters") +
-  theme_bw()
+  ylab("5'UTR GC") + xlab("Clusters")
+#stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill") +
+#stat_compare_means(comparisons = list(c(1, 2), c(1, 3), c(1, 4), c(1, 5), c(6, 2), c(6, 3), c(6, 4), c(6, 5), c(2, 4), c(3, 5)), method = "t.test", tip.length = 0, hide.ns = TRUE, size = 2.5)
 
-cl5pGCp <- ggbetweenstats( # Group clusters
+cl5pGCa <- ggbetweenstats( # Group clusters
   ggtheme = theme_pubr(),
-  data = featDF[featDF$GC_5pUTR >= 25,], ylab = "GC 5pUTR",
+  data = featDF[featDF$len_5pUTR > 1,], ylab = "GC 5pUTR",
   x = Cluster, y = GC_5pUTR,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 1, mean.point.args = list(size = 1.5, color = "darkred"),
-  pairwise.comparisons = FALSE, results.subtitle = FALSE, sample.size.label = FALSE, mean.plotting = FALSE,  # Set FALSE for the manuscript figure.
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE,  # Set FALSE for the manuscript figure.
   title = "5'UTR GC distributions of the 6 MClust clusters")
 
-tr5pGCp <-  ggbetweenstats( # Group translation
+tr5pGCa <-  ggbetweenstats( # Group translation
   ggtheme = theme_ggstatsplot(),
   data = featDF[featDF$GC_5pUTR >= 25,], ylab = "GC 5pUTR",
   x = Translation, y = GC_5pUTR,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 1, mean.point.args = list(size = 1.5, color = "darkred"),
-  pairwise.comparisons = FALSE, results.subtitle = FALSE, sample.size.label = FALSE, mean.plotting = FALSE,  # Set FALSE for the manuscript figure.
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE,  # Set FALSE for the manuscript figure.
   title = "5'UTR GC distributions of the 3 translation behaviours")
 
 # 5'UTR MFE boxplots
-ggplot(featDF, aes(x = Cluster, y = MFE_5pUTR, fill = Translation, group = Cluster)) +
-  coord_cartesian(ylim = c(-400, 0)) +
-  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
-  geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
-  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "dodge") +
-  theme(legend.position = "topleft") +
+cl5pMFE <- ggplot(featDF[featDF$MFE_5pUTR > -400 & featDF$len_5pUTR != 0,], aes(x = Cluster, y = MFE_5pUTR, fill = Cluster)) + theme_pubr() +
+  scale_fill_brewer(palette="Dark2") +
+  #coord_cartesian(ylim = c(-400, 0)) +
+  #ggtitle("5'UTR MFE distributions of the 6 Mclust cluster") +
+  geom_boxplot(varwidth = TRUE, alpha = 0.5, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(alpha=0.4,  shape = 16, color = "grey2", position = position_jitter(width = 0.1, height = 0)) +
+  theme(legend.position = "none", axis.title.x=element_blank()) +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
-  ylab("5'UTR MFE") +
-  xlab("Cluster") +
-  ggtitle("5'UTR MFE distributions of the 6 Mclust clusters") +
-  theme_bw()
+  ylab("5'UTR MFE") #+ xlab("Clusters")
+#stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill") +
+#stat_compare_means(comparisons = list(c(1, 2), c(1, 3), c(1, 4), c(1, 5), c(6, 2), c(6, 3), c(6, 4), c(6, 5), c(2, 4), c(3, 5)), method = "t.test", tip.length = 0, hide.ns = TRUE, size = 2.5)
 
-cl5pMFEp <- ggbetweenstats( # Group clusters
+cl5pMFEa <- ggbetweenstats( # Group clusters
   ggtheme = theme_pubr(),
   data = featDF[featDF$MFE_5pUTR >= -400,], ylab = "5'UTR MFE",
   x = Cluster, y = MFE_5pUTR,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 0, mean.point.args = list(size = 1.5, color = "darkred"),
-  pairwise.comparisons = FALSE, results.subtitle = FALSE, sample.size.label = FALSE, mean.plotting = FALSE,  # Set FALSE for the manuscript figure.
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE,  # Set FALSE for the manuscript figure.
   title = "5'UTR MFE distributions of the 6 MClust clusters")
 
-tr5pMFEp <- ggbetweenstats( # Group translation
+tr5pMFEa <- ggbetweenstats( # Group translation
   ggtheme = theme_ggstatsplot(),
   data = featDF[featDF$MFE_5pUTR >= -400,], ylab = "5'UTR MFE",
   x = Translation, y = MFE_5pUTR,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 0, mean.point.args = list(size = 1.5, color = "darkred"),
-  pairwise.comparisons = FALSE, results.subtitle = FALSE, sample.size.label = FALSE, mean.plotting = FALSE,  # Set FALSE for the manuscript figure.
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE,  # Set FALSE for the manuscript figure.
   title = "MFE 5'UTR distributions of the 3 translation behaviours")
 
 # 5UTR MFE_BP boxplots
-ggplot(featDF, aes(x = Cluster, y = MfeBP_5pUTR, fill = Translation, group = Cluster)) +
-  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
-  geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
-  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "dodge") +
-  theme(legend.position = "topleft") +
+cl5pMfeBP <- ggplot(featDF[featDF$len_5pUTR > 1,], aes(x = Cluster, y = MfeBP_5pUTR, fill = Cluster)) + theme_pubr() +
+  scale_fill_brewer(palette="Dark2") +
+  #ggtitle("5'UTR MFE per BP distributions of the 6 Mclust cluster") +
+  geom_boxplot(varwidth = TRUE, alpha = 0.5, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(alpha=0.4,  shape = 16, color = "grey2", position = position_jitter(width = 0.1, height = 0)) +
+  theme(legend.position = "none", axis.title.x=element_blank()) +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
-  ylab("5'UTR Mfe_Bp") +
-  xlab("Cluster") +
-  ggtitle("5'UTR MFE per bp distribution of the 6 Mclust clusters") +
-  theme_bw()
+  ylab("5'UTR MFE") #+ xlab("Clusters")
+#stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill") +
+#stat_compare_means(comparisons = list(c(1, 2), c(1, 3), c(1, 4), c(1, 5), c(6, 2), c(6, 3), c(6, 4), c(6, 5), c(2, 4), c(3, 5)), method = "t.test", tip.length = 0, hide.ns = TRUE, size = 2.5)
 
-cl5pMfeBPp <- ggbetweenstats( # Group clusters
+cl5pMfeBPa <- ggbetweenstats( # Group clusters
   ggtheme = theme_pubr(),
   data = featDF[featDF$MfeBP_5pUTR != 0,], ylab = "5'UTR MFE/BP",
   x = Cluster, y = MfeBP_5pUTR,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 2, mean.point.args = list(size = 1.5, color = "darkred"),
-  pairwise.comparisons = FALSE, results.subtitle = FALSE, sample.size.label = FALSE, mean.plotting = FALSE,  # Set FALSE for the manuscript figure.
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE,  # Set FALSE for the manuscript figure.
   title = "MFE per BP 5'UTR distributions of the 6 MClust clusters")
 
-tr5pMfeBPp <- ggbetweenstats( # Group translation
+tr5pMfeBPa <- ggbetweenstats( # Group translation
   ggtheme = theme_ggstatsplot(),
   data = featDF[featDF$MfeBP_5pUTR != 0,], ylab = "5'UTR MFE/BP",
   x = Translation, y = MfeBP_5pUTR,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 2, mean.point.args = list(size = 1.5, color = "darkred"),
-  pairwise.comparisons = FALSE, results.subtitle = FALSE, sample.size.label = FALSE, mean.plotting = FALSE,  # Set FALSE for the manuscript figure.
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE,  # Set FALSE for the manuscript figure.
   title = "MFE per BP 5'UTR distributions of the 3 translation behaviours")
 
 # 3UTR lengths boxplots
-ggplot(featDF[featDF$len_3pUTR <= 4000 & featDF$len_3pUTR !=0,], aes(x = Cluster, y = len_3pUTR, fill = Translation, group = Cluster)) +
-  #coord_cartesian(ylim = c(0, 4000)) +
-  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
-  geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
-  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill") +
-  theme(legend.position = "topleft") +
+cl3pLEN <- ggplot(featDF[featDF$len_3pUTR <= 4000 & featDF$len_3pUTR !=0,], aes(x = Cluster, y = len_3pUTR, fill = Cluster)) + theme_pubr() +
+  scale_fill_brewer(palette="Dark2") +
+  #ggtitle("3'UTR length distributions of the 6 Mclust cluster") +
+  geom_boxplot(varwidth = TRUE, alpha = 0.5, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(alpha=0.4,  shape = 16, color = "grey2", position = position_jitter(width = 0.1, height = 0)) +
+  theme(legend.position = "none", axis.title.x=element_blank()) +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
-  ylab("3'UTR length") +
-  xlab("Cluster") +
-  ggtitle("3'UTR length distribution of the 6 Mclust clusters") +
-  theme_bw()
+  ylab("3'UTR length") #+ xlab("Clusters")
+#stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill") +
+#stat_compare_means(comparisons = list(c(1, 2), c(1, 3), c(1, 4), c(1, 5), c(6, 2), c(6, 3), c(6, 4), c(6, 5), c(2, 4), c(3, 5)), method = "t.test", tip.length = 0, hide.ns = TRUE, size = 2.5)
 
-cl3pLENp <- ggbetweenstats( # Group clusters
+cl3pLENa <- ggbetweenstats( # Group clusters
   ggtheme = theme_pubr(), ylab = "3'UTR length",
   data = featDF[featDF$len_3pUTR != 0 & featDF$len_3pUTR <= 4000,],
   x = Cluster, y = len_3pUTR,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 0, mean.point.args = list(size = 1.5, color = "darkred"),
-  pairwise.comparisons = FALSE, results.subtitle = FALSE, sample.size.label = FALSE, mean.plotting = FALSE,  # Set FALSE for the manuscript figure.
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE,  # Set FALSE for the manuscript figure.
   title = "3'UTR length distributions of the 6 MClust clusters")
 
-tr3pLENp <- ggbetweenstats( # Group translation
+tr3pLENa <- ggbetweenstats( # Group translation
   ggtheme = theme_ggstatsplot(), ylab = "3'UTR length",
   data = featDF[featDF$len_3pUTR != 0 & featDF$len_3pUTR <= 4000,],
   x = Translation, y = len_3pUTR,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 0, mean.point.args = list(size = 1.5, color = "darkred"),
-  pairwise.comparisons = FALSE, results.subtitle = FALSE, sample.size.label = FALSE, mean.plotting = FALSE,  # Set FALSE for the manuscript figure.
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE,  # Set FALSE for the manuscript figure.
   title = "3'UTR length distributions of the 3 translation behaviours")
 
-# 3UTR GC boxplots  #TODO FIX THE COLUMN NAME
-ggplot(featDF, aes(x = Cluster, y = len_3pUTR.1, fill = Translation, group = Cluster)) +
-  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
-  geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
-  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "dodge") +
-  theme(legend.position = "topleft") +
+# 3UTR GC boxplots
+cl3pGC <- ggplot(featDF[featDF$len_3pUTR !=0,], aes(x = Cluster, y = GC_3pUTR, fill = Cluster)) + theme_pubr() +
+  scale_fill_brewer(palette="Dark2") +
+  #ggtitle("3'UTR GC distributions of the 6 Mclust cluster") +
+  geom_boxplot(varwidth = TRUE, alpha = 0.5, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(alpha=0.4,  shape = 16, color = "grey2", position = position_jitter(width = 0.1, height = 0)) +
+  theme(legend.position = "none", axis.title.x=element_blank()) +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
-  ylab("3'UTR GC") +
-  xlab("Cluster") +
-  ggtitle("3'UTR GC distribution of the 6 Mclust clusters") +
-  theme_bw()
+  ylab("3'UTR GC") #+ xlab("Clusters")
+#stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill") +
+#stat_compare_means(comparisons = list(c(1, 2), c(1, 3), c(1, 4), c(1, 5), c(6, 2), c(6, 3), c(6, 4), c(6, 5), c(2, 4), c(3, 5)), method = "t.test", tip.length = 0, hide.ns = TRUE, size = 2.5)
 
-cl3pGCp <- ggbetweenstats( # Group clusters
+cl3pGCa <- ggbetweenstats( # Group clusters
   ggtheme = theme_pubr(), ylab = "3'UTR GC",
-  data = featDF[featDF$len_3pUTR.1 != 0,],
-  x = Cluster, y = len_3pUTR.1,
+  data = featDF[featDF$len_3pUTR != 0,],
+  x = Cluster, y = GC_3pUTR,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 1, mean.point.args = list(size = 1.5, color = "darkred"),
-  pairwise.comparisons = FALSE, results.subtitle = FALSE, sample.size.label = FALSE, mean.plotting = FALSE,  # Set FALSE for the manuscript figure.
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE,  # Set FALSE for the manuscript figure.
   title = "GC 3'UTR distributions of the 6 MClust clusters")
 
-tr3pGCp <- ggbetweenstats( # Group translation
+tr3pGCa <- ggbetweenstats( # Group translation
   ggtheme = theme_ggstatsplot(), ylab = "3'UTR GC",
-  data = featDF[featDF$len_3pUTR.1 != 0,],
-  x = Translation, y = len_3pUTR.1,
+  data = featDF[featDF$len_3pUTR != 0,],
+  x = Translation, y = GC_3pUTR,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 1, mean.point.args = list(size = 1.5, color = "darkred"),
-  pairwise.comparisons = FALSE, results.subtitle = FALSE, sample.size.label = FALSE, mean.plotting = FALSE,  # Set FALSE for the manuscript figure.
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE,  # Set FALSE for the manuscript figure.
   title = "GC 3'UTR distribution of the 3 translation behaviours")
 
 # Plot the 3UTR MFE boxplots
-ggplot(featDF, aes(x = Cluster, y = MFE_3pUTR, fill = Translation, group = Cluster)) +
+cl3pMFE <- ggplot(featDF[featDF$MFE_3pUTR >= -1500 & featDF$len_3pUTR !=0,], aes(x = Cluster, y = MFE_3pUTR, fill = Cluster)) + theme_pubr() +
+  scale_fill_brewer(palette="Dark2") +
   coord_cartesian(ylim = c(-1500, 0)) +
-  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
-  geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
-  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "dodge") +
-  theme(legend.position = "topleft") +
+  #ggtitle("3'UTR MFE distributions of the 6 Mclust cluster") +
+  geom_boxplot(varwidth = TRUE, alpha = 0.5, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(alpha=0.4,  shape = 16, color = "grey2", position = position_jitter(width = 0.1, height = 0)) +
+  theme(legend.position = "none", axis.title.x=element_blank()) +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
-  ylab("3'UTR MFE") +
-  xlab("Cluster") +
-  ggtitle("3'UTR MFE distribution of the 6 Mclust clusters") +
-  theme_bw()
+  ylab("3'UTR MFE") + xlab("Clusters")
+#stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill") +
+#stat_compare_means(comparisons = list(c(1, 2), c(1, 3), c(1, 4), c(1, 5), c(6, 2), c(6, 3), c(6, 4), c(6, 5), c(2, 4), c(3, 5)), method = "t.test", tip.length = 0, hide.ns = TRUE, size = 2.5)
 
-cl3pMFEp <- ggbetweenstats( # Group clusters
+cl3pMFEa <- ggbetweenstats( # Group clusters
   ggtheme = theme_pubr(), ylab = "3'UTR MFE",
   data = featDF[featDF$MFE_3pUTR >= -1500 & featDF$MFE_3pUTR != 0,],
   x = Cluster, y = MFE_3pUTR,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 0, mean.point.args = list(size = 1.5, color = "darkred"),
-  pairwise.comparisons = FALSE, results.subtitle = FALSE, sample.size.label = FALSE, mean.plotting = FALSE,  # Set FALSE for the manuscript figure.
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE,  # Set FALSE for the manuscript figure.
   title = "MFE 3'UTR distributions of the 6 MClust clusters")
 
-tr3pMFEp <- ggbetweenstats( # Group translation
+tr3pMFEa <- ggbetweenstats( # Group translation
   ggtheme = theme_ggstatsplot(), ylab = "3'UTR MFE",
   data = featDF[featDF$MFE_3pUTR >= -1500 & featDF$MFE_3pUTR != 0,],
   x = Translation, y = MFE_3pUTR,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 0, mean.point.args = list(size = 1.5, color = "darkred"),
-  pairwise.comparisons = FALSE, results.subtitle = FALSE, sample.size.label = FALSE, mean.plotting = FALSE,  # Set FALSE for the manuscript figure.
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE,  # Set FALSE for the manuscript figure.
   title = "MFE 3'UTR distributions of the 3 translation behaviours")
 
 # Plot the 3UTR MFE_BP lengths boxplots
-ggplot(featDF, aes(x = Cluster, y = MfeBP_3pUTR, fill = Translation, group = Cluster)) +
-  #coord_cartesian(ylim = c(-1500, 0)) +
-  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
-  geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
-  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "dodge") +
-  theme(legend.position = "topleft") +
+cl3pMfeBP <- ggplot(featDF[featDF$MFE_3pUTR >= -1500 & featDF$len_3pUTR !=0,], aes(x = Cluster, y = MfeBP_3pUTR, fill = Cluster)) + theme_pubr() +
+  scale_fill_brewer(palette="Dark2") +
+  #ggtitle("3'UTR MFE per BP distributions of the 6 Mclust cluster") +
+  geom_boxplot(varwidth = TRUE, alpha = 0.5, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(alpha=0.4,  shape = 16, color = "grey2", position = position_jitter(width = 0.1, height = 0)) +
+  theme(legend.position = "none", axis.title.x=element_blank()) +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
-  ylab("3'UTR MFE_BP") +
-  xlab("Cluster") +
-  ggtitle("3'UTR MFE per bp distribution of the 6 Mclust clusters") +
-  theme_bw()
+  ylab("3'UTR MFE per BP") + xlab("Clusters")
+#stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill") +
+#stat_compare_means(comparisons = list(c(1, 2), c(1, 3), c(1, 4), c(1, 5), c(6, 2), c(6, 3), c(6, 4), c(6, 5), c(2, 4), c(3, 5)), method = "t.test", tip.length = 0, hide.ns = TRUE, size = 2.5)
 
-cl3pMfeBPp <- ggbetweenstats( # Group clusters
+cl3pMfeBPa <- ggbetweenstats( # Group clusters
   ggtheme =theme_pubr(), ylab = "3'UTR MFE/BP",
   data = featDF[featDF$MFE_3pUTR >= -1500 & featDF$MFE_3pUTR != 0,],
   x = Cluster, y = MfeBP_3pUTR,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 2, mean.point.args = list(size = 1.5, color = "darkred"),
-  pairwise.comparisons = FALSE, results.subtitle = FALSE, sample.size.label = FALSE, mean.plotting = FALSE,  # Set FALSE for the manuscript figure.
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE,  # Set FALSE for the manuscript figure.
   title = "MFE per BP 3'UTR distributions of the 6 MClust clusters")
 
-tr3pMfeBPp <- ggbetweenstats( # Group translation
+tr3pMfeBPa <- ggbetweenstats( # Group translation
   ggtheme = theme_ggstatsplot(), ylab = "3'UTR MFE/BP",
   data = featDF[featDF$MFE_3pUTR >= -1500 & featDF$MFE_3pUTR != 0,],
   x = Translation, y = MfeBP_3pUTR,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 2, mean.point.args = list(size = 1.5, color = "darkred"),
-  pairwise.comparisons = FALSE, results.subtitle = FALSE, sample.size.label = FALSE, mean.plotting = FALSE,  # Set FALSE for the manuscript figure.
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE,  # Set FALSE for the manuscript figure.
   title = "MFE per BP 3'UTR distributions of the 3 translation behaviours")
 
 # Plot the TOP local score boxplots
-ggplot(featDF, aes(x = Cluster, y = TOP_localScore, fill = Translation, group = Cluster)) +
-  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
-  geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
-  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill") +
-  theme(legend.position = "topleft") +
+clTOP <- ggplot(featDF[featDF$len_5pUTR !=0,], aes(x = Cluster, y = TOP_localScore, fill = Cluster)) + theme_pubr() +
+  scale_fill_brewer(palette="Dark2") +
+  #ggtitle("TOP local score distributions of the 6 Mclust cluster") +
+  geom_boxplot(varwidth = TRUE, alpha = 0.5, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(alpha=0.4,  shape = 16, color = "grey2", position = position_jitter(width = 0.1, height = 0.05)) +
+  theme(legend.position = "none", axis.title.x=element_blank()) +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
-  ylab("TOP local score") +
-  xlab("Cluster") +
-  ggtitle("TOP local score distribution of the 6 Mclust clusters") +
-  theme_bw()
+  ylab("TOP local score") + xlab("Cluster")
+#stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill") +
+#stat_compare_means(comparisons = list(c(1, 2), c(1, 3), c(1, 4), c(1, 5), c(6, 2), c(6, 3), c(6, 4), c(6, 5), c(2, 4), c(3, 5)), method = "t.test", tip.length = 0, hide.ns = TRUE, size = 2.5)
 
-clTOPp <- ggbetweenstats( # Group clusters
+clTOPa <- ggbetweenstats( # Group clusters
   ggtheme = theme_pubr(),
   data = featDF, ylab = "TOP local score",
   x = Cluster, y = TOP_localScore,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 1, mean.point.args = list(size = 1.5, color = "darkred"),
-  pairwise.comparisons = FALSE, results.subtitle = FALSE, sample.size.label = FALSE, mean.plotting = FALSE,  # Set FALSE for the manuscript figure.
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE,  # Set FALSE for the manuscript figure.
   title = "TOP local score distributions of the 6 MClust clusters")
 
-trTOPp <- ggbetweenstats( # Group translation
+trTOPa <- ggbetweenstats( # Group translation
   ggtheme = theme_ggstatsplot(),
   data = featDF, ylab = "TOP local score",
   x = Translation, y = TOP_localScore,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 1, mean.point.args = list(size = 1.5, color = "darkred"),
-  pairwise.comparisons = FALSE, results.subtitle = FALSE, sample.size.label = FALSE, mean.plotting = FALSE,  # Set FALSE for the manuscript figure.
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE,  # Set FALSE for the manuscript figure.
   title = "TOP local score distributions of the 3 translation behaviours")
 
 # Plot the CAI index boxplots
-ggplot(featDF, aes(x = Cluster, y = CAI, fill = Translation, group = Cluster)) +
+clCAI <- ggplot(featDF, aes(x = Cluster, y = CAI, fill = Cluster)) + theme_pubr() +
+  scale_fill_brewer(palette="Dark2") +
   coord_cartesian(ylim = c(0.65, 0.9)) +
-  geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
-  geom_jitter(aes(col = Translation), position = position_jitter(width = .2, height = 0)) +
-  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "stack") +
-  theme(legend.position = "topleft") +
+  #ggtitle("CAI distributions of the 6 Mclust cluster") +
+  geom_boxplot(varwidth = TRUE, alpha = 0.5, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(alpha=0.4,  shape = 16, color = "grey2", position = position_jitter(width = 0.1, height = 0.05)) +
+  theme(legend.position = "none", axis.title.x=element_blank()) +
   scale_x_discrete(limits = c("1","2","3","4","5","6")) +
-  ylab("CAI index") +
-  xlab("Cluster") +
-  ggtitle("CAI index distribution of the 6 Mclust clusters") +
-  theme_bw()
+  ylab("CAI") + xlab("Cluster")
+#stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill") +
+#stat_compare_means(comparisons = list(c(1, 2), c(1, 3), c(1, 4), c(1, 5), c(6, 2), c(6, 3), c(6, 4), c(6, 5), c(2, 4), c(3, 5)), method = "t.test", tip.length = 0, hide.ns = TRUE, size = 2.5)
 
-clCAIp <- ggbetweenstats( # Group clusters
+clCAIa <- ggbetweenstats( # Group clusters
   ggtheme = theme_pubr(),
   data = featDF, ylab = "CAI",
   x = Cluster, y = CAI,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 2, mean.point.args = list(size = 1.5, color = "darkred"),
-  pairwise.comparisons = FALSE, results.subtitle = FALSE, sample.size.label = FALSE, mean.plotting = FALSE,  # Set FALSE for the manuscript figure.
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE,  # Set FALSE for the manuscript figure.
   title = "CAI distributions of the 6 MClust clusters")
 
-trCAIp <- ggbetweenstats( # Group translation
+trCAIa <- ggbetweenstats( # Group translation
   ggtheme = theme_ggstatsplot(),
   data = featDF, ylab = "CAI",
   x = Translation, y = CAI,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 2, mean.point.args = list(size = 1.5, color = "darkred"),
-  pairwise.comparisons = FALSE, results.subtitle = FALSE, sample.size.label = FALSE, mean.plotting = FALSE,  # Set FALSE for the manuscript figure.
+  pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE,  # Set FALSE for the manuscript figure.
   title = "CAI distribution of the 3 translation behaviours")
 
 # Produce combined publication figures.
-figureBoxClust <- ggarrange(clCDp, clGCp, cl5pLENp, cl5pGCp, cl5pMFEp, cl5pMfeBPp,
-                            cl3pLENp, cl3pGCp, cl3pMFEp, cl3pMfeBPp, clTOPp,
-                            clCAIp,
-                            labels = c("A", "B", "C", "D", "E" ,"F", "G", "H",
-                                       "I", "J", "K", "L"),
-                            ncol = 2, nrow = 6)
-
-figureBoxTransl <- ggarrange(trCDp, trGCp, tr5pLENp, tr5pGCp, tr5pMFEp,
-                             tr5pMfeBPp, tr3pLENp, tr3pGCp, tr3pMFEp, tr3pMfeBPp,
-                             trTOPp, trCAIp,
+figureBoxClustP <- ggarrange(clCD, clGC, cl5pLEN, cl5pGC, cl5pMFE, cl5pMfeBP,
+                             cl3pLEN, cl3pGC, cl3pMFE, cl3pMfeBP, clTOP,
+                             clCAI,
                              labels = c("A", "B", "C", "D", "E" ,"F", "G", "H",
                                         "I", "J", "K", "L"),
                              ncol = 2, nrow = 6)
 
-analysisBoxClust <- ggarrange(clCDa, clGCa, cl5pLENa, cl5pGCa, cl5pMFEa,
-                              cl5pMfeBPa, cl3pLENa, cl3pGCa, cl3pMFEa,
-                              cl3pMfeBPa, clTOPa, clCAIa,
-                              labels = c("A", "B", "C", "D", "E" ,"F", "G", "H",
-                                         "I", "J", "K", "L"),
-                              ncol = 2, nrow = 6)
+analysisBoxClustI <- ggarrange(clCDa, clGCa, cl5pLENa, cl5pGCa, cl5pMFEa,
+                              cl5pMfeBPa,
+                              labels = c("A", "B", "C", "D", "E" ,"F"),
+                              ncol = 2, nrow = 3)
 
-analysisBoxTransl <- ggarrange(trCDa, trGCa, tr5pLENa, tr5pGCa, tr5pMFEa,
-                              tr5pMfeBPa, tr3pLENa, tr3pGCa, tr3pMFEa,
-                              tr3pMfeBPa, trTOPa, trCAIa,
-                              labels = c("A", "B", "C", "D", "E" ,"F", "G", "H",
-                                         "I", "J", "K", "L"),
-                              ncol = 2, nrow = 6)
+analysisBoxClustII <- ggarrange(cl3pLENa, cl3pGCa, cl3pMFEa,
+                                cl3pMfeBPa, clTOPa, clCAIa,
+                                labels = c("G", "H", "I", "J", "K", "L"),
+                                ncol =2, nrow = 3)
+
+analysisBoxTranslI <- ggarrange(trCDa, trGCa, tr5pLENa, tr5pGCa, tr5pMFEa,
+                              tr5pMfeBPa,
+                              labels = c("A", "B", "C", "D", "E" ,"F"),
+                              ncol = 2, nrow = 3)
+
+analysisBoxTranslII <- ggarrange(tr3pLENa, tr3pGCa, tr3pMFEa,
+                                tr3pMfeBPa, trTOPa, trCAIa,
+                                labels = c("G", "H", "I", "J", "K", "L"),
+                                ncol = 2, nrow = 3)
 
 
 ## Cluster Enrichements ------------------------------------
@@ -1315,16 +1321,15 @@ for (i in 1:nrow(featTranslRatioFC)) {
 
 # Make the plots.
 # Plot the Coding length boxplots
-ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = coding_len, fill = diffTranslRat, group = diffTranslRat)) +
-  coord_cartesian(ylim = c(0, 5000)) +
+ptCD <- ggplot(featTranslRatioFC[featTranslRatioFC$coding_len <= 5000,], aes(x = diffTranslRat, y = coding_len, fill = diffTranslRat)) +
+  theme_pubr() + scale_fill_brewer(palette="Dark2") +
+  geom_boxplot(varwidth = TRUE, alpha = 0.5, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(alpha=0.4,  shape = 16, color = "grey2", position = position_jitter(width = 0.15, height = 0)) +
   geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
-  geom_jitter(aes(col = diffTranslRat), position = position_jitter(width = .2, height = 0)) +
-  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill") +
-  theme(legend.position = "topleft") +
-  ylab("Coding Length") +
-  xlab("Transl. Groups") +
-  ggtitle("Coding length distribution of the 3 transl. difference genes sets") +
-  theme_bw()
+  theme(legend.position = "none", axis.title.x=element_blank()) +
+  ylab("Coding Length") + xlab("Transl. Groups")
+#  ggtitle("Coding length distribution of the 3 transl. difference genes sets") +
+#  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill")
 
 ptCDa <- ggbetweenstats( #Group clusters
   ggtheme = theme_pubr(),
@@ -1333,7 +1338,7 @@ ptCDa <- ggbetweenstats( #Group clusters
   x = diffTranslRat, y = coding_len,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 0, mean.point.args = list(size = 1.5, color = "darkred"),
   #title = "Coding length distribution of the 3 groups of translation differences.",
   pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE, mean.ci = TRUE) + ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73")) # Set FALSE for the manuscript figure.
@@ -1341,16 +1346,16 @@ ptCDa <- ggbetweenstats( #Group clusters
 
 
 # Plot GC content boxplots
-ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = GC, fill = diffTranslRat, group = diffTranslRat)) +
+ptGC <-ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = GC, fill = diffTranslRat)) +
+  theme_pubr() + scale_fill_brewer(palette="Dark2") +
   coord_cartesian(ylim = c(30, 75)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.5, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(alpha=0.4,  shape = 16, color = "grey2", position = position_jitter(width = 0.15, height = 0)) +
   geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
-  geom_jitter(aes(col = diffTranslRat), position = position_jitter(width = .2, height = 0)) +
-  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "jitter") +
-  theme(legend.position = "topleft") +
-  ylab("GC") +
-  xlab("Transl. Groups") +
-  ggtitle("GC content distribution of the 3 transl. difference genes sets") +
-  theme_bw()
+  theme(legend.position = "none", axis.title.x=element_blank()) +
+  ylab("GC") + xlab("Transl. Groups")
+#  ggtitle("Coding length distribution of the 3 transl. difference genes sets") +
+#  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill")
 
 ptGCa <- ggbetweenstats( # Group clusters
   ggtheme = theme_pubr(),
@@ -1359,23 +1364,22 @@ ptGCa <- ggbetweenstats( # Group clusters
   ylab = "GC", xlab = "H/L glucose translation ratio difference",
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 2, mean.point.args = list(size = 1.5, color = "darkred"),
   #title = "GC content of the 3 groups of translation differences.",
   pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE, mean.ci = TRUE) + ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73")) # Set FALSE for the manuscript figure.
 
-
 # Plot 5'UTR length boxplots
-ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = X5pUTR_len, fill = diffTranslRat, group = diffTranslRat)) +
+pt5plen <- ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = X5pUTR_len, fill = diffTranslRat)) +
+  theme_pubr() + scale_fill_brewer(palette="Dark2") +
   coord_cartesian(ylim = c(0, 1000)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.5, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(alpha=0.4,  shape = 16, color = "grey2", position = position_jitter(width = 0.15, height = 0)) +
   geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
-  geom_jitter(aes(col = diffTranslRat), position = position_jitter(width = .2, height = 0)) +
-  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "jitter") +
-  theme(legend.position = "topleft") +
-  ylab("5'UTR lengths") +
-  xlab("Transl. Groups") +
-  ggtitle("5'UTR length distribution of the 3 transl. difference genes sets") +
-  theme_bw()
+  theme(legend.position = "none", axis.title.x=element_blank()) +
+  ylab("5'UTR length") + xlab("Transl. Groups")
+#  ggtitle("Coding length distribution of the 3 transl. difference genes sets") +
+#  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill")
 
 pt5plena <- ggbetweenstats( # Group clusters
   ggtheme = theme_pubr(),
@@ -1384,22 +1388,22 @@ pt5plena <- ggbetweenstats( # Group clusters
   ylab = "5'UTR length", xlab = "H/L glucose translation ratio difference",
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 0, mean.point.args = list(size = 1.5, color = "darkred"),
   #title = "5'UTR length of the 3 groups of translation differences.",
   pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE, mean.ci = TRUE) + ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73")) # Set FALSE for the manuscript figure.
 
 
 # Plot 5'UTR GC boxplots
-ggplot(featTranslRatioFC[featTranslRatioFC$X5pUTR_GC != 0,], aes(x = diffTranslRat, y = X5pUTR_GC, fill = diffTranslRat, group = diffTranslRat)) +
+pt5pGC <- ggplot(featTranslRatioFC[featTranslRatioFC$X5pUTR_GC != 0,], aes(x = diffTranslRat, y = X5pUTR_GC, fill = diffTranslRat)) +
+  theme_pubr() + scale_fill_brewer(palette="Dark2") +
+  geom_boxplot(varwidth = TRUE, alpha = 0.5, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(alpha=0.4,  shape = 16, color = "grey2", position = position_jitter(width = 0.15, height = 0)) +
   geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
-  geom_jitter(aes(col = diffTranslRat), position = position_jitter(width = .2, height = 0)) +
-  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "jitter") +
-  theme(legend.position = "topleft") +
-  ylab("5'UTR GC") +
-  xlab("Transl. Groups") +
-  ggtitle("5'UTR GC content distribution of the 3 transl. difference genes sets") +
-  theme_bw()
+  theme(legend.position = "none", axis.title.x=element_blank()) +
+  ylab("5'UTR GC") + xlab("Transl. Groups")
+#  ggtitle("Coding length distribution of the 3 transl. difference genes sets") +
+#  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill")
 
 pt5pGCa <- ggbetweenstats( # Group clusters
   ggtheme = theme_pubr(),
@@ -1408,23 +1412,22 @@ pt5pGCa <- ggbetweenstats( # Group clusters
   x = diffTranslRat, y = X5pUTR_GC,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 2, mean.point.args = list(size = 1.5, color = "darkred"),
   #title = "5'UTR GC of the 3 groups of translation differences.",
   pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE, mean.ci = TRUE) + ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73")) # Set FALSE for the manuscript figure.
 
 
 # Plot 5'UTR MFE boxplots
-ggplot(featTranslRatioFC[featTranslRatioFC$X5pUTR_MFE != 0,], aes(x = diffTranslRat, y = X5pUTR_MFE, fill = diffTranslRat, group = diffTranslRat)) +
-  #coord_cartesian(ylim = c(30, 80)) +
+pt5pMFE <- ggplot(featTranslRatioFC[featTranslRatioFC$X5pUTR_MFE != 0,], aes(x = diffTranslRat, y = X5pUTR_MFE, fill = diffTranslRat)) +
+  theme_pubr() + scale_fill_brewer(palette="Dark2") +
+  geom_boxplot(varwidth = TRUE, alpha = 0.5, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(alpha=0.4,  shape = 16, color = "grey2", position = position_jitter(width = 0.15, height = 0)) +
   geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
-  geom_jitter(aes(col = diffTranslRat), position = position_jitter(width = .2, height = 0)) +
-  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "jitter") +
-  theme(legend.position = "topleft") +
-  ylab("5'UTR MFE") +
-  xlab("Transl. Groups") +
-  ggtitle("5'UTR MFE distribution of the 3 transl. difference genes sets") +
-  theme_bw()
+  theme(legend.position = "none", axis.title.x=element_blank()) +
+  ylab("5'UTR MFE") + xlab("Transl. Groups")
+#  ggtitle("Coding length distribution of the 3 transl. difference genes sets") +
+#  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill")
 
 pt5pMFEa <- ggbetweenstats( # Group clusters
   ggtheme = theme_pubr(),
@@ -1433,23 +1436,22 @@ pt5pMFEa <- ggbetweenstats( # Group clusters
   x = diffTranslRat, y = X5pUTR_MFE,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 0, mean.point.args = list(size = 1.5, color = "darkred"),
   #title = "5'UTR MFE of the 3 groups of translation differences.",
   pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE, mean.ci = TRUE) + ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73")) # Set FALSE for the manuscript figure.
 
 
 # Plot 5'UTR MFE per BP boxplots
-ggplot(featTranslRatioFC[featTranslRatioFC$X5pUTR_MfeBP != 0,], aes(x = diffTranslRat, y = X5pUTR_MfeBP, fill = diffTranslRat, group = diffTranslRat)) +
-  coord_cartesian(ylim = c(0.01, -0.7)) +
+pt5pMfeBP <- ggplot(featTranslRatioFC[featTranslRatioFC$X5pUTR_MfeBP != 0,], aes(x = diffTranslRat, y = X5pUTR_MfeBP, fill = diffTranslRat)) +
+  theme_pubr() + scale_fill_brewer(palette="Dark2") +
+  geom_boxplot(varwidth = TRUE, alpha = 0.5, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(alpha=0.4,  shape = 16, color = "grey2", position = position_jitter(width = 0.15, height = 0)) +
   geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
-  geom_jitter(aes(col = diffTranslRat), position = position_jitter(width = .2, height = 0)) +
-  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "stack") +
-  theme(legend.position = "topleft") +
-  ylab("5'UTR MFE/BP") +
-  xlab("Transl. Groups") +
-  ggtitle("5'UTR MFE/BP of the 3 transl. difference genes sets") +
-  theme_bw()
+  theme(legend.position = "none", axis.title.x=element_blank()) +
+  ylab("5'UTR MFE/Bp") + xlab("Transl. Groups")
+#  ggtitle("Coding length distribution of the 3 transl. difference genes sets") +
+#  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill")
 
 pt5pMfeBPa <- ggbetweenstats( # Group clusters
   ggtheme = theme_pubr(),
@@ -1458,23 +1460,22 @@ pt5pMfeBPa <- ggbetweenstats( # Group clusters
   x = diffTranslRat, y = X5pUTR_MfeBP,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 2, mean.point.args = list(size = 1.5, color = "darkred"),
   #title = "5'UTR MFE per BP of the 3 groups of translation differences.",
   pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE, mean.ci = TRUE) + ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73")) # Set FALSE for the manuscript figure.
 
 
 # Plot 3'UTR length boxplots
-ggplot(featTranslRatioFC[featTranslRatioFC$X3pUTR_len <= 5000 & featTranslRatioFC$X3pUTR_len != 0,], aes(x = diffTranslRat, y = X3pUTR_len, fill = diffTranslRat, group = diffTranslRat)) +
-  #coord_cartesian(ylim = c(0, 5000)) +
+pt3pLEN <- ggplot(featTranslRatioFC[featTranslRatioFC$X3pUTR_len <= 5000 & featTranslRatioFC$X3pUTR_len != 0,], aes(x = diffTranslRat, y = X3pUTR_len, fill = diffTranslRat)) +
+  theme_pubr() + scale_fill_brewer(palette="Dark2") +
+  geom_boxplot(varwidth = TRUE, alpha = 0.5, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(alpha=0.4,  shape = 16, color = "grey2", position = position_jitter(width = 0.15, height = 0)) +
   geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
-  geom_jitter(aes(col = diffTranslRat), position = position_jitter(width = .2, height = 0)) +
-  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill") +
-  theme(legend.position = "topleft") +
-  ylab("3'UTR length") +
-  xlab("Transl. Groups") +
-  ggtitle("3'UTR length distribution of the 3 transl. difference genes sets") +
-  theme_bw()
+  theme(legend.position = "none", axis.title.x=element_blank()) +
+  ylab("3'UTR length") + xlab("Transl. Groups")
+#  ggtitle("3'UTR length distributions of the 3 translatin difference genes sets") +
+#  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill")
 
 pt3pLENa <- ggbetweenstats( # Group clusters
   ggtheme = theme_pubr(),
@@ -1483,23 +1484,23 @@ pt3pLENa <- ggbetweenstats( # Group clusters
   ylab = "3'UTR length", xlab = "H/L glucose translation ratio difference",
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 0, mean.point.args = list(size = 1.5, color = "darkred"),
   #title = "3'UTR length of the 3 groups of translation differences.",
   pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE, mean.ci = TRUE) + ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73")) # Set FALSE for the manuscript figure.
 
 
 # Plot 3'UTR GC boxplots
-ggplot(featTranslRatioFC[featTranslRatioFC$X3pUTR_GC != 0,], aes(x = diffTranslRat, y = X3pUTR_GC, fill = diffTranslRat, group = diffTranslRat)) +
-  #coord_cartesian(ylim = c(30, 80)) +
+pt3pGC <- ggplot(featTranslRatioFC[featTranslRatioFC$X3pUTR_GC != 0,], aes(x = diffTranslRat, y = X3pUTR_GC, fill = diffTranslRat)) +
+  theme_pubr() + scale_fill_brewer(palette="Dark2") +
+  coord_cartesian(ylim = c(15, 80)) +
+  geom_boxplot(varwidth = TRUE, alpha = 0.5, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(alpha=0.4,  shape = 16, color = "grey2", position = position_jitter(width = 0.15, height = 0)) +
   geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
-  geom_jitter(aes(col = diffTranslRat), position = position_jitter(width = .2, height = 0)) +
-  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "jitter") +
-  theme(legend.position = "topleft") +
-  ylab("3'UTR GC") +
-  xlab("Transl. Groups") +
-  ggtitle("3'UTR GC distribution of the 3 transl. difference genes sets") +
-  theme_bw()
+  theme(legend.position = "none", axis.title.x=element_blank()) +
+  ylab("3'UTR GC") + xlab("Transl. Groups")
+#  ggtitle("3'UTR length distributions of the 3 translatin difference genes sets") +
+#  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill")
 
 pt3pGCa <- ggbetweenstats( # Group clusters
   ggtheme = theme_pubr(),
@@ -1508,23 +1509,22 @@ pt3pGCa <- ggbetweenstats( # Group clusters
   x = diffTranslRat, y = X3pUTR_GC,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 2, mean.point.args = list(size = 1.5, color = "darkred"),
   #title = "3'UTR GC of the 3 groups of translation differences.",
   pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE, mean.ci = TRUE) + ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73")) # Set FALSE for the manuscript figure.
 
 
 # Plot 3'UTR MFE boxplots
-ggplot(featTranslRatioFC[featTranslRatioFC$X3pUTR_MFE >= -2500 & featTranslRatioFC$X3pUTR_MFE != 0,], aes(x = diffTranslRat, y = X3pUTR_MFE, fill = diffTranslRat, group = diffTranslRat)) +
-  #coord_cartesian(ylim = c(0, -2500)) +
+pt3pMFE <- ggplot(featTranslRatioFC[featTranslRatioFC$X3pUTR_MFE >= -2500 & featTranslRatioFC$X3pUTR_MFE != 0,], aes(x = diffTranslRat, y = X3pUTR_MFE, fill = diffTranslRat)) +
+  theme_pubr() + scale_fill_brewer(palette="Dark2") +
+  geom_boxplot(varwidth = TRUE, alpha = 0.5, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(alpha=0.4,  shape = 16, color = "grey2", position = position_jitter(width = 0.15, height = 0)) +
   geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
-  geom_jitter(aes(col = diffTranslRat), position = position_jitter(width = .2, height = 0)) +
-  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "jitter") +
-  theme(legend.position = "topleft") +
-  ylab("3'UTR MFE") +
-  xlab("Transl. Groups") +
-  ggtitle("3'UTR MFE distribution of the 3 transl. difference genes sets") +
-  theme_bw()
+  theme(legend.position = "none", axis.title.x=element_blank()) +
+  ylab("3'UTR MFE") + xlab("Transl. Groups")
+#  ggtitle("3'UTR length distributions of the 3 translatin difference genes sets") +
+  #stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill")
 
 pt3pMFEa <- ggbetweenstats(
   ggtheme = theme_pubr(),
@@ -1533,23 +1533,23 @@ pt3pMFEa <- ggbetweenstats(
   x = diffTranslRat,y = X3pUTR_MFE,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 0, mean.point.args = list(size = 1.5, color = "darkred"),
   #title = "3'UTR MFE of the 3 groups of translation differences.",
   pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE, mean.ci = TRUE) + ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73")) # Set FALSE for the manuscript figure.
 
 
 # Plot 3'UTR MFE/BP boxplots
-ggplot(featTranslRatioFC[featTranslRatioFC$X3pUTR_MfeBP != 0,], aes(x = diffTranslRat, y = X3pUTR_MfeBP, fill = diffTranslRat, group = diffTranslRat)) +
+pt3pMfeBP <- ggplot(featTranslRatioFC[featTranslRatioFC$X3pUTR_MfeBP != 0,], aes(x = diffTranslRat, y = X3pUTR_MfeBP, fill = diffTranslRat)) +
   #coord_cartesian(ylim = c(0, -0.5)) +
+  theme_pubr() + scale_fill_brewer(palette="Dark2") +
+  geom_boxplot(varwidth = TRUE, alpha = 0.5, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(alpha=0.4,  shape = 16, color = "grey2", position = position_jitter(width = 0.15, height = 0)) +
   geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
-  geom_jitter(aes(col = diffTranslRat), position = position_jitter(width = .2, height = 0)) +
-  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "stack") +
-  theme(legend.position = "topleft") +
-  ylab("3'UTR MFE/BP") +
-  xlab("Transl. Groups") +
-  ggtitle("3'UTR MFE/BP distribution of the 3 transl. difference genes sets") +
-  theme_bw()
+  theme(legend.position = "none", axis.title.x=element_blank()) +
+  ylab("3'UTR MFE/Bp") + xlab("Transl. Groups")
+#  ggtitle("3'UTR length distributions of the 3 translatin difference genes sets") +
+#  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill")
 
 pt3pMfeBPa <- ggbetweenstats(
   ggtheme = theme_pubr(),
@@ -1558,23 +1558,23 @@ pt3pMfeBPa <- ggbetweenstats(
   x = diffTranslRat, y = X3pUTR_MfeBP,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 2, mean.point.args = list(size = 1.5, color = "darkred"),
   #title = "3'UTR MFE per BP of the 3 groups of translation differences.",
   pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE, mean.ci = TRUE) + ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73")) # Set FALSE for the manuscript figure.
 
 
 # Plot TOP local score boxplots
-ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = TOP_localScore, fill = diffTranslRat, group = diffTranslRat)) +
+ptTOP <- ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = TOP_localScore, fill = diffTranslRat)) +
   #coord_cartesian(ylim = c(0, -0.6)) +
+  theme_pubr() + scale_fill_brewer(palette="Dark2") +
+  geom_boxplot(varwidth = TRUE, alpha = 0.5, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(alpha=0.4,  shape = 16, color = "grey2", position = position_jitter(width = 0.15, height = 0.05)) +
   geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
-  geom_jitter(aes(col = diffTranslRat), position = position_jitter(width = .2, height = 0)) +
-  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "dodge") +
-  theme(legend.position = "topleft") +
-  ylab("TOP local score") +
-  xlab("Transl. Groups") +
-  ggtitle("TOP local score distribution of the 3 transl. difference genes sets") +
-  theme_bw()
+  theme(legend.position = "none", axis.title.x=element_blank()) +
+  ylab("TOP local score") + xlab("Transl. Groups")
+#  ggtitle("3'UTR length distributions of the 3 translatin difference genes sets") +
+#  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill")
 
 ptTOPa <- ggbetweenstats(
   ggtheme = theme_pubr(),
@@ -1583,22 +1583,22 @@ ptTOPa <- ggbetweenstats(
   x = diffTranslRat, y = TOP_localScore,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 0, mean.point.args = list(size = 1.5, color = "darkred"),
   #title = "TOP local score of the 3 groups of translation differences.",
   pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE, mean.ci = TRUE) + ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73")) # Set FALSE for the manuscript figure.
 
 # Plot CAI boxplots
-ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = CAI, fill = diffTranslRat, group = diffTranslRat)) +
+ptCAI <- ggplot(featTranslRatioFC, aes(x = diffTranslRat, y = CAI, fill = diffTranslRat, group = diffTranslRat)) +
   #coord_cartesian(ylim = c(0, -0.6)) +
+  theme_pubr() + scale_fill_brewer(palette="Dark2") +
+  geom_boxplot(varwidth = TRUE, alpha = 0.5, notch = TRUE, outlier.shape = NA) +
+  geom_jitter(alpha=0.4,  shape = 16, color = "grey2", position = position_jitter(width = 0.15, height = 0.05)) +
   geom_boxplot(varwidth = TRUE, alpha = 0.4, notch = TRUE, outlier.shape = NA) +
-  geom_jitter(aes(col = diffTranslRat), position = position_jitter(width = .2, height = 0)) +
-  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "dodge") +
-  theme(legend.position = "topleft") +
-  ylab("CAI") +
-  xlab("Transl. Groups") +
-  ggtitle("CAI distribution of the 3 transl. difference genes sets") +
-  theme_bw()
+  theme(legend.position = "none", axis.title.x=element_blank()) +
+  ylab("CAI") + xlab("Transl. Groups")
+#  ggtitle("3'UTR length distributions of the 3 translatin difference genes sets") +
+#  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, position = "fill")
 
 ptCAIa <- ggbetweenstats(
   ggtheme = theme_pubr(),
@@ -1607,7 +1607,7 @@ ptCAIa <- ggbetweenstats(
   x = diffTranslRat, y = CAI,
   notch = TRUE, point.jitter.width = 1,
   type = "np", conf.level = 0.95, var.equal = FALSE,
-  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 5, stroke = 0),
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.2), alpha = 0.5, size = 4, stroke = 0),
   k = 3, mean.point.args = list(size = 1.5, color = "darkred"),
   #title = "CAI of the 3 groups of translation differences.",
   pairwise.comparisons = TRUE, results.subtitle = TRUE, sample.size.label = TRUE, mean.plotting = TRUE, mean.ci = TRUE) + ggplot2::scale_color_manual(values = c("#0072B2", "#D55E00", "#009E73")) # Set FALSE for the manuscript figure.
@@ -1631,6 +1631,35 @@ translEffBoxesAnal <- ggarrange(ptCDa, ptGCa, pt5plena, pt5pGCa, pt5pMFEa,
 topRNAs <- read.table("publishedTOPrnas.csv", header=TRUE, sep = "\t")
 topRNAsList <- list("Known" = as.vector(topRNAs$union.of.3[topRNAs$union.of.3 != ""]), "Cluster1" = as.vector(topRNAs$DEGs_Cluster.1[topRNAs$DEGs_Cluster.1 != ""]), "Cluster6" = as.vector(topRNAs$DEGs_Cluster.6[topRNAs$DEGs_Cluster.6 != ""]))
 plot(euler(topRNAsList, shape = "ellipse"), quantities = TRUE)
+
+
+## Further TOP RNA analysis --------------------------------
+# Generate the data frame for the analysis of cluster1 and cluster6
+#!!! WE SELECT top local score and the coding lenght as the first features, however we will explore more regressions (all vs. all).
+featDF_1_6 <- featDF[(featDF$Cluster == 1 | featDF$Cluster == 6), ]
+# generate the "Known" vector.
+featDF_1_6$Known <- FALSE
+for (r in 1:nrow(featDF_1_6)) {
+  row = featDF_1_6[r,,]
+  if (as.character(row$gene_name) %in% topRNAsList$Known) {
+    featDF_1_6[r,]$Known <- TRUE
+  }
+}
+
+# Generate a data frame by removing some outliers (i.e.e long and zero UTRs).
+featDFtrim <- subset(featDF, featDF$coding_len <= 5000 & featDF$len_5pUTR <= 1000 & featDF$len_3pUTR <= 5000 & featDF$len_5pUTR != 0 & featDF$len_3pUTR != 0 & featDF$MfeBP_5pUTR != 0 & featDF$MfeBP_3pUTR != 0)
+
+ggplot(subset(featDF_1_6, featDF_1_6$Cluster == 1), aes(x = TOP_localScore, y = log2(coding_len), color = Known)) + geom_point(size = 3, alpha = 0.75) + geom_rug() + ggtitle("Cluster 1")
+ggplot(subset(featDF_1_6, featDF_1_6$Cluster == 6), aes(x = TOP_localScore, y = log2(coding_len), color = Known)) + geom_point(size = 3, alpha = 0.75) + geom_rug() + ggtitle("Cluster 6")
+
+# All vs all correlation scatterplots for clusters.
+ggpairs(subset(featDF_1_6[,3:14], featDF_1_6$Cluster == 1))
+ggpairs(subset(featDF_1_6[,3:14], featDF_1_6$Cluster == 6))  # Simple ones.
+ggpairs(featDF_1_6[rownames(featDFtrim),], columns = c(3, 4, 5, 6, 8, 9, 10, 12, 13 ,14), lower = list(continuous = "smooth"), diag =  list(continuous = "densityDiag"), upper = list(continuous = "density"), ggplot2::aes(colour=Cluster))  # Combined, trimmed etc.
+
+# allVSall for the whole set as translation 1+6, 2+3, 4+5
+ggpairs(featDFtrim, columns = c(3, 4, 5, 6, 8, 9, 10, 12, 13 ,14), lower = list(continuous = "smooth"), diag =  list(continuous = "densityDiag"), upper = list(continuous = "cor"), ggplot2::aes(colour=Translation, alpha = 0.5))
+ggpairs(featDFtrim, columns = c(3, 4, 5, 6, 8, 9, 10, 12, 13 ,14), lower = list(continuous = "smooth"), diag =  list(continuous = "densityDiag"), upper = list(continuous = "density"), ggplot2::aes(colour=Translation, alpha = 0.5))
 
 
 ## UTRDB analysis -----------------------------------------
@@ -1667,11 +1696,10 @@ dist5pUTR <- dist(utr5_matrixPlot[,1:3], method = "manhattan")  # Not used!
 clust5pUTR <- hclust(dist5pUTR, method = "ward.D")  # Not used!
 # Add the common gene names instead of ENSEMBLE IDs.
 featDFi <- featDF
-rownames(featDFi) <- featDFi$X
-featDFi$X <- NULL
-utr5_matrixPlot$gene_name <- featDFi[rownames(utr5_matrixPlot), ]$gene_name
+utr5_matrixPlot$gene_name <- featDFi[rownames(utr5_matrixPlot),, ]$gene_name
 rownames(utr5_matrixPlot) <- utr5_matrixPlot$gene_name
 utr5_matrixPlot$gene_name <- NULL
+utr5_matrixPlot$PAS <- NULL
 
 # For the 5'UTRs we have a range between 0 and 13 that's why we use 14 colours.
 #colours5p <-  c("white", "#C6DBEF", "#4292C6", replicate(4, "#2171B5"), replicate(7, "#08306B"))
@@ -1681,7 +1709,7 @@ colours5p <- c("#FFFFFF", "#A3BAD2", "#6B92B7", rep("#34699C", 4), rep("#104E8B"
 # 5'UTRs plotting clustering
 hclust.local <- function(x) hclust(x, method="average")
 par(mar = c(0,0,0,0))
-heatmap.2(as.matrix(utr5_matrixPlot[,!names(utr5_matrixPlot) %in% "Clust"]), scale = "none", col = colours5p, RowSideColors = brewer.pal(n = 6, name = "Dark2")[as.factor(as.character(utr5_matrixPlot$Clust))], margins = c(9, 8), cexRow = 1.2, cexCol = 2.5, hclustfun = hclust.local, trace = "none", lhei = c(0.00001, 4), lwid = c(1, 5), key = FALSE, srtCol = 45)
+heatmap.2(as.matrix(utr5_matrixPlot[,!names(utr5_matrixPlot) %in% "Clust"]), scale = "none", col = colours5p, RowSideColors = brewer.pal(n = 6, name = "Dark2")[as.factor(as.character(utr5_matrixPlot$Clust))], margins = c(9, 8), cexRow = 1.2, cexCol = 2.5, hclustfun = hclust.local, trace = "none", lhei = c(0.00001, 4), lwid = c(1, 5), key = FALSE, srtCol = 40)
 legend("topleft", legend=c(1:6), fill= brewer.pal(6, "Dark2"), title = "Clusters", border = brewer.pal(6, "Dark2"), bty = "n", cex = 2, y.intersp = 1.5)
 # Keep the informative part of the clustering
 utr5_matrixPlotI <- utr5_matrixPlot[rowSums(utr5_matrixPlot[,c(10,8,3)] > 0) != 0,][, c(3,8,10,11)]
@@ -1778,3 +1806,97 @@ ggplot(freq_cluster_g4cluster, aes(x = ClusterID, y = Percentage, fill = transla
   xlab("Cluster ID")
   #+ ggtitle("Percentrage of G-quadruplex genes of the 6 Mclust clusters")
 
+
+# REVISIONS --------
+
+## EndoBeta microarray ---------------------------
+transEndoB <- read.table("data/GSE48101_full_matrix.txt", header = TRUE, sep = "\t", colClasses = c("character", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"))
+
+groupsEndoB <- factor(c("GSM99", "GSM99", "GSM99", "H357cre", "H357cre", "H357cre", "H357p59", "H357p59", "H357p59", "SKPC", "SKPC", "SKPC"), levels = c("GSM99", "H357cre", "H357p59", "SKPC"))
+
+groupsEndoBB <- factor(c("H357cre", "H357cre", "H357cre", "H357p59", "H357p59", "H357p59", "SKPC", "SKPC", "SKPC"), levels = c("H357cre", "H357p59", "SKPC"))
+
+
+# A bit of filtering perhaps...
+dd <- transEndoB
+dd$probeID <- rownames(transEndoB)
+dd <- melt(dd, id.vars = "probeID")
+dd$value <- as.numeric(dd$value)
+dd$value <- log2(dd$value)
+# Just
+ggplot(dd, aes(x = value)) + facet_wrap(~variable,scales = "free_x") + geom_histogram()
+
+# PCA on the microarray values directly.
+res.pca.EndoB = PCA(t(transEndoB), graph = FALSE)
+res.pca.EndoBB = PCA(t(transEndoB[,4:12]), graph = FALSE)
+
+fviz_pca_ind(res.pca.EndoB,
+             fill.ind = groupsEndoB, col.var = "black", repel = TRUE,
+             col.ind = groupsEndoB, # coloured by groups
+             palette = c("#00AFBB", "#E7B800", "#FC4E07", "orange"),
+             addEllipses = TRUE, # Ellipses de concentration
+             legend.title = "Groups",
+             title = "PCA on the microarrays of endoBeta cells")
+
+fviz_pca_ind(res.pca.EndoBB,
+             fill.ind = groupsEndoBB, col.var = "black", repel = TRUE,
+             col.ind = groupsEndoBB, # coloured by groups
+             palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+             addEllipses = TRUE, # Ellipses de concentration
+             legend.title = "Groups",
+             title = "PCA on the microarrays of endoBeta cells")
+
+# Filter and assignee probes to genes.
+affyGenesProbes <- read.table("data/genesProbes_HGU133_Plus_2.csv", header = TRUE, sep = ",")
+# Calculate MAD on the two H357 cell lines.
+## perhaps we want to calculate the MAD between H357 and SKPC also....
+transEndoB$MAD <- apply(transEndoB[,4:9], 1, mad)
+# Sort by affy_probe names and add gene names.
+affyGenesProbes <- affyGenesProbes[order(affyGenesProbes$affy_ProbeID),]
+transEndoB$geneID <- affyGenesProbes$gene_Name
+
+# Generate two intermediate matrices to select for probes with the higest MAD.
+x <- transEndoB[order(transEndoB$MAD, dedecreasing = TRUE),]
+y <- x[which(!duplicated(x$geneID)),]
+
+# Put the H357 and SKPC lines in a new proper data.frame
+transH357 <- data.frame(y[,4:12], row.names = y$geneID)
+# Remove a funny line with gene name "---"
+transH357 <- transH357[-c(2),]
+
+# Remove lowly expresses genes.
+h357_medians <- rowMedians(as.matrix(transH357))
+# Plot row median intensities.
+hist(h357_medians, 100, col = "cornsilk1", freq = FALSE,
+     main = "Histogram of the median intensities",
+     border = "antiquewhite4",
+     xlab = "Median intensities")
+
+# Differential expression
+designMat_E <- model.matrix(~0+groupsEndoBB)
+colnames(designMat_E) <- levels(groupsEndoBB)
+
+contr.matrix_E <- makeContrasts(
+  Cre_vs_P59 = H357cre - H357p59,
+  Cre_vs_SKPC = H357cre - SKPC,
+  P59_vs_SKPC = H357p59 - SKPC,
+  levels = colnames(designMat_E))
+
+# DiffExp Endo H357 SKPC
+vmE <- voom(transH357, designMat_E, plot = TRUE)
+fitE <- lmFit(vmE, designMat_E)
+vfitE <- contrasts.fit(fitE, contrasts = contr.matrix_E)
+efitE <- eBayes(vfitE, robust = TRUE)
+efE <- decideTests(efitE, p.value = 0.01, lfc = 1)
+summary(efE)
+plotSA(efitE, main = "SA plot for probes from H357")
+plotMD(efitE, column = 1, status = efE[,1], main = colnames(efitE)[1], ylim = c( -1.5, 1.2))
+tfitE <- treat(vfitE, lfc = log2(1.5))
+ttE <- decideTests(tfitE)
+summary(ttE)
+plotMD(tfitE, column = 1, status = ttE[,1], main = colnames(tfitE)[1], ylim = c( -1.5, 1.2))
+plotMD(tfitE, column = 2, status = ttE[,2], main = colnames(tfitE)[2], ylim = c( -2, 2))
+plotMD(tfitE, column = 3, status = ttE[,3], main = colnames(tfitE)[3], ylim = c( -2, 2))
+
+
+# Show with mixomics that the two cell lines are similar....
