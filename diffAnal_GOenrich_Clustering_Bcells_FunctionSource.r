@@ -82,9 +82,9 @@ filter_low_counts <- function(gem, exps, g = 1, t = 5, ...){
 }
 
 filter_noisy_counts <- function(gem, exps, c = 0.5, ...){
-  # Function to filter out lowly expressed (i.e. counts) genes
+  # Function to filter out noisy expressed genes
   # gem  : Gene Expression Matrix. A data frame with the conditions as columns and the gene expression profiles as rows.
-  # exps : Experiments. A factor specifying the grouping of experiments. MUST have lenght of the colnames of gem and MUST specify the different levels (i.e. treatments) of the data.
+  # exps : Experiments. A factor specifying the grouping of experiments. MUST have equal length with the columns of gem and MUST specify the different levels (i.e. treatments) of the data.
   # c    : Coefficient of variation threshold.
   rows <- vector()
   for (i in 1:nrow(gem)) {
@@ -92,6 +92,7 @@ filter_noisy_counts <- function(gem, exps, c = 0.5, ...){
     means <- aggregate(row~exps, FUN = mean)$row
     sds <- aggregate(row~exps, FUN = sd)$row
     cvs <- sds/means
+    print(cvs)
     cvs[is.na(cvs)] <- Inf
     lg <- length(levels(exps))
     # Condition to filter all genes whose coefficient of variation is more than c in at least one experiment.
@@ -123,6 +124,32 @@ filter_low_expression <- function(e, groups, thres = 3, samples = 1, coefVar = 0
   }
   return(e[rows,])
 }
+
+filter_informative_genes <- function(e, grouping, test = "t", thres = 0.01, ...){
+  # Function to filter informative genes between two conditions
+  # e      : gene expression data frame (or cpm, or tpm matrix).
+  # groups : factor designating the grouping (conditions, treatment etc.) it MUST be of equal length to the columns of e and it MUST have only two levels.
+  # test   : One of "t" or "w" for a parametric t-Student test or a non-parametric Wilcoxon test (default t-test)
+  # thres  : the threshold of the t-test p-value.
+  rows <- vector()
+  for (i in 1:nrow(e)) {
+    dft <- data.frame(gexpr=as.numeric(e[i,]), cond = grouping)
+    if (test == "t"){
+      tt <- t.test(gexpr~cond, data = dft)
+    } else if (test == "w") {
+      tt <- wilcox.test(gexpr~cond, data = dft)
+    } else {
+      print("Wrong test option, select only one of 'w' or 't' for Wilcoxon or t-Student test.")
+      q()
+    }
+    # This condition filters for "informative" genes.
+    if ( tt$p.value <= thres ) {  # Looks in the UNADJUSTED p-value TODO perhaps some adjustment for multiple testing.
+      rows <- append(rows, rownames(e)[i])
+    }
+  }
+  return(e[rows,])
+}
+
 
 
 ## Ploting functions ------------------
