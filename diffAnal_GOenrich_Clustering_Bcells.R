@@ -405,6 +405,7 @@ cnetplot(egogsDEGs_ALL, foldChange = geneListSYMB, colorEdge = TRUE, showCategor
 cnetplot(ekePDEGs, foldChange = geneListSYMB, colorEdge = TRUE, symbol = "ENSEMBL") + ggtitle("CNETplot GOgsea DEGs ALL")
 
 
+
 #### Clustering -------------------------------------------
 my_palette <- brewer.pal(n = 11, name = "RdYlGn")
 
@@ -1855,7 +1856,7 @@ transEndoB$MAD <- apply(transEndoB[,4:9], 1, mad)
 affyGenesProbes <- affyGenesProbes[order(affyGenesProbes$affy_ProbeID),]
 transEndoB$geneID <- affyGenesProbes$gene_Name
 
-# Generate two intermediate matrices to select for probes with the higest MAD.
+# Generate two intermediate matrices to select for probes with the highest MAD.
 x <- transEndoB[order(transEndoB$MAD, dedecreasing = TRUE),]
 y <- x[which(!duplicated(x$geneID)),]
 
