@@ -259,7 +259,7 @@ plot(euler(polyVenn, shape = "ellipse"), quantities = TRUE)
 
 
 #### Process Translation data --------------------------
-tpmPPglu <- read.table("data/polysomeProfile_TPM_proteinCoding.csv", header = TRUE, sep = ";")
+tpmPPglu <- read.table("data/polysomeProfile_TPM_proteinCoding.csv", header = TRUE, sep = ",")
 
 row_NON_zero <- apply(tpmPPglu, 1, function(row) all(row != 0))
 tpmPPgluClean <- tpmPPglu[row_NON_zero,]
@@ -406,7 +406,7 @@ cnetplot(ekePDEGs, foldChange = geneListSYMB, colorEdge = TRUE, symbol = "ENSEMB
 
 
 
-#### Clustering -------------------------------------------
+## Clustering -------------------------------------------
 my_palette <- brewer.pal(n = 11, name = "RdYlGn")
 
 ### Hierarchical Clustering -------------------------------
@@ -1020,7 +1020,7 @@ barplot(egoTranslDOWN_ALL, title = "TranslDOWN ALL GO enrichment", showCategory 
 
 ## Translation Ratio analyses -----------------------------
 # Prepare the datasets.
-dd <- read.table("data/polysomeProfile_TPM_proteinCoding.csv", header = TRUE, sep = ";")
+dd <- read.table("data/polysomeProfile_TPM_proteinCoding.csv", header = TRUE, sep = ",")
 rs <- apply(dd, 1, function(row) all(row != 0))
 dd <- dd[rs,]
 # Filter also for the lowly expressed genes from the diff. analysis before.
@@ -1262,7 +1262,7 @@ ggplot(featTransl, aes(x = Cluster, y = CAI, fill = Cluster, group = Cluster)) +
 ## Analysis of Translation differences --------------------
 # Apply a more stringent filter to avoid the lowly translated genes.
 # re-read the data
-ddT <- read.table("data/polysomeProfile_TPM_proteinCoding.csv", header = TRUE, sep = ";")
+ddT <- read.table("data/polysomeProfile_TPM_proteinCoding.csv", header = TRUE, sep = ",")
 # We do not calculate the monosomes fraction.
 ddT <- ddT[,7:24]
 # Generate the grouping factors
@@ -1272,7 +1272,7 @@ groupsFactor_Trasnl <- factor(c("LightH", "LightH", "LightH", "LightL", "LightL"
                                 levels = c("LightH", "LightL", "HeavyH", "HeavyL", "TotalH", "TotalL"));
 
 # Strict filter. All samples MUST have at least 5 average TPM.
-ddF <- lowExpression_filter(ddT, groupsFactor_Trasnl, thres = 5, samples = 6)
+ddF <- filter_low_counts(ddT, groupsFactor_Trasnl, thres = 5, samples = 6)
 
 lightHavgT <- rowMeans(ddF[,1:3])
 lightLavgT <- rowMeans(ddF[,4:6])
@@ -1295,7 +1295,7 @@ diffTranslRatioFC_up <- rownames(diffTranslRatioFC_sorted[diffTranslRatioFC_sort
 diffTranslRatioFC_down <- rownames(diffTranslRatioFC_sorted[diffTranslRatioFC_sorted$transRatioFC <= -0.25, , drop = FALSE]) # 154
 diffTranslRatioFC_control <- rownames(diffTranslRatioFC_sorted[diffTranslRatioFC_sorted$transRatioFC >= -0.01 & diffTranslRatioFC_sorted$transRatioFC <= 0.01, , drop = FALSE]) # 326
 
-# Keep all thse together in a file so that we will calculate the features.
+# Keep all these together in a file so that we will calculate the features.
 write(c(diffTranslRatioFC_down, diffTranslRatioFC_up, diffTranslRatioFC_control), file = "diffTranslRatioFC_ALL.txt")
 
 ## calculate rna features with the rna_feat_ext suit. (627 genes were retrieved from 627) (the previous analysis with looser expression filter has retrieved 617 out of 717 genes)
