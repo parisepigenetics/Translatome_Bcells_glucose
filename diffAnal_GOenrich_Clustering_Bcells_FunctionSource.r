@@ -7,9 +7,10 @@ library(tidyverse)
 library(ggplot2)
 library(RColorBrewer)
 
-# Global variables
-my_palette <- brewer.pal(n = 11, name = "RdYlGn")
-
+# Global functions
+my_palette <- function(n){
+  return(colorRampPalette(brewer.pal(11, name = "RdBu"))(n))
+}
 
 # Processing functions ----------------
 discretise <- function(x, t) {
@@ -92,7 +93,6 @@ filter_noisy_counts <- function(gem, exps, c = 0.5, ...){
     means <- aggregate(row~exps, FUN = mean)$row
     sds <- aggregate(row~exps, FUN = sd)$row
     cvs <- sds/means
-    print(cvs)
     cvs[is.na(cvs)] <- Inf
     lg <- length(levels(exps))
     # Condition to filter all genes whose coefficient of variation is more than c in at least one experiment.
@@ -173,7 +173,7 @@ geneBoxplotCond <- function(matrix, name, experiments, treatments, jit_width = 0
 }
 
 plot_semiSupervised_clust <- function(data, k, method, scale = FALSE, title = "", ...){
-  # Nicely plots a k-means clustering
+  # Nicely plots a k-means and other semi-supervised clusterings
   # Scaling.
   if (scale == TRUE) {
     data <- as.data.frame(scale(data))
@@ -190,14 +190,15 @@ plot_semiSupervised_clust <- function(data, k, method, scale = FALSE, title = ""
   clusterCols <- as.character(sort(clustRes$cluster))
   # Title
   if (title == "") {
-    ti = paste(method, " clustering of, ", deparse(substitute(data)), " scale: ", as.character(scale))
+    ti = paste(method, " clustering of ", deparse(substitute(data)), ", scale:", as.character(scale))
   } else {
     ti = title
   }
   # Plotting
-  heatmap(as.matrix(data)[order(clustRes$cluster),], Rowv = NA, Colv = NA, scale = "none", labRow = NA, cexCol = 0.75, col = my_palette, RowSideColors = clusterCols, ylab = "Genes", main = ti)
+  heatmap(as.matrix(data)[order(clustRes$cluster),], Rowv = NA, Colv = NA, scale = "none", labRow = NA, cexCol = 0.75, col = my_palette(32), RowSideColors = clusterCols, ylab = "Genes", main = ti)
   invisible(list(res = clustRes, df = dfcall))
 }
+
 
 plot_unSupervised_clust <- function(data, method, scale = FALSE, title = TRUE, ...){
   # Nicely plots a k-means clustering or other unsupervised clustering
@@ -224,7 +225,7 @@ plot_unSupervised_clust <- function(data, method, scale = FALSE, title = TRUE, .
     ti <- NULL
   }
   # Plotting
-  heatmap(as.matrix(data)[order(clustRes$classification),], scale = "none", cexCol = 1, col = my_palette, RowSideColors = clusterCols, main = ti, cexRow = 1.5)
+  heatmap(as.matrix(data)[order(clustRes$classification),], scale = "none", cexCol = 1, col = my_palette(32), RowSideColors = clusterCols, main = ti, cexRow = 1.5)
   invisible(list(res = clustRes, df = dfcall))
 }
 
