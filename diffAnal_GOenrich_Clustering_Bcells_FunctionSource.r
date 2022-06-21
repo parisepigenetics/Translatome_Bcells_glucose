@@ -6,6 +6,8 @@ library(mclust)
 library(tidyverse)
 library(ggplot2)
 library(RColorBrewer)
+library(diptest)
+
 
 # Global functions
 my_palette <- function(n){
@@ -136,7 +138,7 @@ filter_informative_genes <- function(e, grouping, test = "t", thres = 0.01, ...)
   # Function to filter informative genes between two conditions
   # e      : gene expression data frame (or cpm, or tpm matrix).
   # groups : factor designating the grouping (conditions, treatment etc.) it MUST be of equal length to the columns of e and it MUST have only two levels.
-  # test   : One of "t" or "w" for a parametric t-Student test or a non-parametric Wilcoxon test (default t-test)
+  # test   : One of "t", "d" or "w" for a parametric t-Student test, a Hartigan dip bimodality or a non-parametric Wilcoxon test (default t-test)
   # thres  : the threshold of the t-test p-value.
   rows <- vector()
   for (i in 1:nrow(e)) {
@@ -145,8 +147,10 @@ filter_informative_genes <- function(e, grouping, test = "t", thres = 0.01, ...)
       tt <- t.test(gexpr~cond, data = dft)
     } else if (test == "w") {
       tt <- wilcox.test(gexpr~cond, data = dft)
+    } else if (test == "d") {
+      tt <- dip.test(dft$gexpr)
     } else {
-      print("Wrong test option, select only one of 'w' or 't' for Wilcoxon or t-Student test.")
+      print("Wrong test option, select only one of 'w', 'd' or 't' for Wilcoxon, DIP or t-Student test.")
       q()
     }
     # This condition filters for "informative" genes.
