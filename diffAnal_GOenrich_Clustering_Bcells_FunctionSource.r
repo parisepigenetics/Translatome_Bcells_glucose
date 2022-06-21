@@ -12,6 +12,13 @@ my_palette <- function(n){
   return(colorRampPalette(brewer.pal(11, name = "RdBu"))(n))
 }
 
+jaccard_similarity <- function(a, b) {
+  # Return the Jaccard similarity between two sets A and B. Useful to compare clusterings
+  inters <- length(intersect(a, b))
+  uni <- length(union(a, b))
+  return(inters/uni)
+}
+
 # Processing functions ----------------
 discretise <- function(x, t) {
   # Low level function to return a 3 level discretisation
