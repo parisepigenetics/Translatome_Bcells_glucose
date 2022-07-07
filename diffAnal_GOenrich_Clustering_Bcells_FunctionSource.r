@@ -10,8 +10,8 @@ library(diptest)
 
 
 # Global functions
-my_palette <- function(n){
-  return(colorRampPalette(brewer.pal(11, name = "RdBu"))(n))
+my_palette <- function(n=11, nc = "RdBu"){
+  return(colorRampPalette(brewer.pal(11, name = nc))(n))
 }
 
 jaccard_similarity <- function(a, b) {
