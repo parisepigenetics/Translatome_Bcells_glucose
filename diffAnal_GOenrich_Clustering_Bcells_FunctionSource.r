@@ -10,7 +10,7 @@ library(diptest)
 
 
 # Global functions
-my_palette <- function(n=11, nc = "RdBu"){
+my_palette <- function(n, nc = "RdYlGn"){
   return(colorRampPalette(brewer.pal(11, name = nc))(n))
 }
 
@@ -160,6 +160,20 @@ filter_informative_genes <- function(e, grouping, test = "t", thres = 0.01, ...)
   }
   return(e[rows,])
 }
+
+# Microarray functions
+select_max_probset <- function(df, ...){
+  # Select the one probeset for each gene. The probeset with the highest average value among all experiments
+  # df MUST contain two ID columns one for probeset names and a second one with gene/transcripts or any other entity names
+  # First we calculate the average intensities for all probesets
+  avgAll <- rowSums(df[, 3:ncol(df)])
+  df["AvgInt"] <- avgAll
+  #Then use the awesome AVE function SUPERB solution!!!
+  dfA <- df[as.logical(ave(df$AvgInt, df[,2], FUN = function(x) x == max(x))),]
+  dfA["AvgInt"] <- NULL
+  return(dfA)
+}
+
 
 
 
