@@ -67,7 +67,7 @@ export_cytoscape <- function(m, filename, ...) {
 # Filtering functions -----------------
 remove_all_zeros <- function(df, ...){
   # Function to remove rows that contain nothing but zeros in a data frame
-  return(df[rowSums(df[])>0,])
+  return(df[rowSums(df[]) > 0,])
 }
 
 filter_low_counts <- function(gem, exps, g = 1, t = 5, ...){
@@ -142,8 +142,8 @@ filter_informative_genes <- function(e, grouping, test = "t", thres = 0.01, ...)
   # thres  : the threshold of the t-test p-value.
   rows <- vector()
   for (i in 1:nrow(e)) {
-    dft <- data.frame(gexpr=as.numeric(e[i,]), cond = grouping)
-    if (test == "t"){
+    dft <- data.frame(gexpr = as.numeric(e[i,]), cond = grouping)
+    if (test == "t") {
       tt <- t.test(gexpr~cond, data = dft)
     } else if (test == "w") {
       tt <- wilcox.test(gexpr~cond, data = dft)
