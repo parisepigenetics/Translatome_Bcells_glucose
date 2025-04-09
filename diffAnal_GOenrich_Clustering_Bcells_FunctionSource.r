@@ -1,5 +1,5 @@
 # Source file with useful functions for the diffAnal, EnrichAnal and ClustAnal of the Beta-cells polysome profile
-# cbouyio, May 2019, UMR 7216
+# cbouyio, since 2019, UMR 7216 & UFR 8512, ERL 11933
 
 # Libraries
 library(mclust)
@@ -161,7 +161,8 @@ filter_informative_genes <- function(e, grouping, test = "t", thres = 0.01, ...)
   return(e[rows,])
 }
 
-# Microarray functions
+
+# Microarray functions ------------------------------------
 select_max_probset <- function(df, ...){
   # Select the one probeset for each gene. The probeset with the highest average value among all experiments
   # df MUST contain two ID columns one for probeset names and a second one with gene/transcripts or any other entity names
@@ -173,8 +174,6 @@ select_max_probset <- function(df, ...){
   dfA["AvgInt"] <- NULL
   return(dfA)
 }
-
-
 
 
 ## Ploting functions ------------------
@@ -252,6 +251,22 @@ plot_unSupervised_clust <- function(data, method, scale = FALSE, title = TRUE, .
   # Plotting
   heatmap(as.matrix(data)[order(clustRes$classification),], scale = "none", cexCol = 1, col = my_palette(32), RowSideColors = clusterCols, main = ti, cexRow = 1.5)
   invisible(list(res = clustRes, df = dfcall))
+}
+
+
+# Enrichment functions ----------------
+comp_allEGO <- function(degsUP, degsDOWN, org, key, uni, pv = 0.01){
+  degsALL <- c(degsUP, degsDOWN)
+  ego1 <- enrichGO(gene = degsALL, OrgDb = org, keyType = key, ont = "MF", pvalueCutoff = pv, universe = uni, readable = FALSE, pool = TRUE)
+  ego2 <- enrichGO(gene = degsUP, OrgDb = org, keyType = key, ont = "MF", pvalueCutoff = pv, universe = uni, readable = FALSE, pool = TRUE)
+  ego3 <- enrichGO(gene = degsDOWN, OrgDb = org, keyType = key, ont = "MF", pvalueCutoff = pv, universe = uni, readable = FALSE, pool = TRUE)
+  ego4 <- enrichGO(gene = degsALL, OrgDb = org, keyType = key, ont = "BP", pvalueCutoff = pv, universe = uni, readable = FALSE, pool = TRUE)
+  ego5 <- enrichGO(gene = degsUP, OrgDb = org, keyType = key, ont = "BP", pvalueCutoff = pv, universe = uni, readable = FALSE, pool = TRUE)
+  ego6 <- enrichGO(gene = degsDOWN, OrgDb = org, keyType = key, ont = "BP", pvalueCutoff = pv, universe = uni, readable = FALSE, pool = TRUE)
+  namesEgos <- c("All_MF", "Up_MF", "Down_MF", "All_BP", "Up_BP", "Down_BP")
+  allEgos <- list(ego1, ego2, ego3, ego4, ego5, ego6)
+  names(allEgos) <- namesEgos
+  return(allEgos)
 }
 
 
